@@ -1,0 +1,152 @@
+object(yii\web\UrlRule)#12 (16) {
+  ["name"]=>
+  string(18) "/<page:\d+>/<tag>/"
+  ["pattern"]=>
+  string(49) "#^(?P<a140ab620>\d+)?(/(?P<a0389b783>[^\/]+))?$#u"
+  ["host"]=>
+  NULL
+  ["route"]=>
+  string(10) "post/index"
+  ["defaults"]=>
+  array(2) {
+    ["page"]=>
+    int(1)
+    ["tag"]=>
+    string(0) ""
+  }
+  ["suffix"]=>
+  NULL
+  ["verb"]=>
+  NULL
+  ["mode"]=>
+  NULL
+  ["encodeParams"]=>
+  bool(true)
+  ["normalizer"]=>
+  NULL
+  ["createStatus":protected]=>
+  NULL
+  ["placeholders":protected]=>
+  array(2) {
+    ["a140ab620"]=>
+    string(4) "page"
+    ["a0389b783"]=>
+    string(3) "tag"
+  }
+  ["_template":"yii\web\UrlRule":private]=>
+  string(14) "/<page>/<tag>/"
+  ["_routeRule":"yii\web\UrlRule":private]=>
+  NULL
+  ["_paramRules":"yii\web\UrlRule":private]=>
+  array(2) {
+    ["page"]=>
+    string(8) "#^\d+$#u"
+    ["tag"]=>
+    string(0) ""
+  }
+  ["_routeParams":"yii\web\UrlRule":private]=>
+  array(0) {
+  }
+}
+
+object(yii\web\UrlRule)#12 (16) {
+  ["name"]=>
+  string(26) "posts/<page:\d+>/<tag>/lin"
+  ["pattern"]=>
+  string(61) "#^posts(/(?P<a140ab620>\d+))?(/(?P<a0389b783>[^\/]+))?/lin$#u"
+  ["host"]=>
+  NULL
+  ["route"]=>
+  string(10) "post/index"
+  ["defaults"]=>
+  array(2) {
+    ["page"]=>
+    int(1)
+    ["tag"]=>
+    string(0) ""
+  }
+  ["suffix"]=>
+  NULL
+  ["verb"]=>
+  NULL
+  ["mode"]=>
+  NULL
+  ["encodeParams"]=>
+  bool(true)
+  ["normalizer"]=>
+  NULL
+  ["createStatus":protected]=>
+  NULL
+  ["placeholders":protected]=>
+  array(2) {
+    ["a140ab620"]=>
+    string(4) "page"
+    ["a0389b783"]=>
+    string(3) "tag"
+  }
+  ["_template":"yii\web\UrlRule":private]=>
+  string(24) "/posts/<page>/<tag>/lin/"
+  ["_routeRule":"yii\web\UrlRule":private]=>
+  NULL
+  ["_paramRules":"yii\web\UrlRule":private]=>
+  array(2) {
+    ["page"]=>
+    string(8) "#^\d+$#u"
+    ["tag"]=>
+    string(0) ""
+  }
+  ["_routeParams":"yii\web\UrlRule":private]=>
+  array(0) {
+  }
+}
+
+
+array(10) {
+  ["."]=>
+  string(2) "\."
+  ["*"]=>
+  string(2) "\*"
+  ["$"]=>
+  string(2) "\$"
+  ["["]=>
+  string(2) "\["
+  ["]"]=>
+  string(2) "\]"
+  ["("]=>
+  string(2) "\("
+  [")"]=>
+  string(2) "\)"
+  ["<page>"]=>
+  string(19) "(?P<a140ab620>\d+)?"
+  ["/<tag>"]=>
+  string(25) "(/(?P<a0389b783>[^\/]+))?"
+  ["<tag>"]=>
+  string(22) "(?P<a0389b783>[^\/]+)?"
+}
+
+array(11) {
+  ["."]=>
+  string(2) "\."
+  ["*"]=>
+  string(2) "\*"
+  ["$"]=>
+  string(2) "\$"
+  ["["]=>
+  string(2) "\["
+  ["]"]=>
+  string(2) "\]"
+  ["("]=>
+  string(2) "\("
+  [")"]=>
+  string(2) "\)"
+  ["/<page>"]=>
+  string(22) "(/(?P<a140ab620>\d+))?"
+  ["<page>"]=>
+  string(19) "(?P<a140ab620>\d+)?"
+  ["/<tag>"]=>
+  string(25) "(/(?P<a0389b783>[^\/]+))?"
+  ["<tag>"]=>
+  string(22) "(?P<a0389b783>[^\/]+)?"
+}
+
+
