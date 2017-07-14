@@ -122,7 +122,7 @@ class Container extends Component
     /**
      * @var array cached dependencies indexed by class/interface names. Each class name
      * is associated with a list of constructor parameter types or default values.
-     * 保存的对象所依赖的对象
+     * 构造函数中依赖的对象以及非对象参数
      */
     private $_dependencies = [];
 
@@ -151,6 +151,9 @@ class Container extends Component
      * @return object an instance of the requested class.
      * @throws InvalidConfigException if the class cannot be recognized or correspond to an invalid definition
      * @throws NotInstantiableException If resolved to an abstract class or an interface (since 2.0.9)
+     * $params是对象构造函数中需要的变量
+     * $config是对象的属性值
+     * $class是对象名
      */
     public function get($class, $params = [], $config = [])
     {
@@ -371,23 +374,46 @@ class Container extends Component
         /* @var $reflection ReflectionClass */
         list ($reflection, $dependencies) = $this->getDependencies($class);
 
+        /*
+         * 这里对构造函数的值做替换 如果构造函数中需要的非默认值 没有被替换掉具体的值 resolveDependencies会抛异常
+         * 直接用实例替换 减少build
+         * Yii::createObject(yii\debug\models\timeline\Svg,[$this]);
+         *  Svg的构造函数public function __construct(TimelinePanel $panel, $config = [])
+         *
+         * $id变量替换
+         * __construct($id, $controller, $config = [])
+         * Yii::createObject($actionMap[$id], [$id, $this]);
+         */
         foreach ($params as $index => $param) {
             $dependencies[$index] = $param;
         }
 
+        //对于$dependencies中的instance对象进行递归 获取依赖对象
         $dependencies = $this->resolveDependencies($dependencies, $reflection);
+
+        /*
+         * 是否能被实例化
+         * 接口 抽象类 私有构造函数 不能被实例化
+         */
         if (!$reflection->isInstantiable()) {
             throw new NotInstantiableException($reflection->name);
         }
+
+        //没有成员变量直接创建返回  $dependencies要有顺序
         if (empty($config)) {
             return $reflection->newInstanceArgs($dependencies);
         }
 
+        //如果对象是从Configurable继承的 最后一个参数强制改为$config 使object.php的构造函数进行赋值
+        //yii里面的对象几乎都是从Configurable里继承来的
         if (!empty($dependencies) && $reflection->implementsInterface('yii\base\Configurable')) {
             // set $config as the last parameter (existing one will be overwritten)
             $dependencies[count($dependencies) - 1] = $config;
+            // object.php里的$this实例就是此时创建的对象
             return $reflection->newInstanceArgs($dependencies);
-        } else {
+        }
+        //否则创建完对象之后再对$config对属性进行赋值
+        else {
             $object = $reflection->newInstanceArgs($dependencies);
             foreach ($config as $name => $value) {
                 $object->$name = $value;
@@ -441,13 +467,13 @@ class Container extends Component
                 } else {
                     //对象类型返回对象的ReflectionClass  其他的返回null
                     $c = $param->getClass();
-                    $dependencies[] = Instance::of($c === null ? null : $c->getName()); //生成构造函数中的依赖对象
+                    $dependencies[] = Instance::of($c === null ? null : $c->getName()); //生成instance对象 保留依赖对象名称
                 }
             }
         }
 
-        $this->_reflections[$class] = $reflection;
-        $this->_dependencies[$class] = $dependencies;
+        $this->_reflections[$class] = $reflection;      //对象的反射
+        $this->_dependencies[$class] = $dependencies; //依赖的对象以及非对象参数
 
         return [$reflection, $dependencies];
     }
@@ -464,8 +490,8 @@ class Container extends Component
         foreach ($dependencies as $index => $dependency) {
             if ($dependency instanceof Instance) {
                 if ($dependency->id !== null) {
-                    $dependencies[$index] = $this->get($dependency->id);
-                } elseif ($reflection !== null) {
+                    $dependencies[$index] = $this->get($dependency->id); //递归处理依赖
+                } elseif ($reflection !== null) { //依赖的非默认值 没有被替换掉
                     $name = $reflection->getConstructor()->getParameters()[$index]->getName();
                     $class = $reflection->getName();
                     throw new InvalidConfigException("Missing required parameter \"$name\" when instantiating \"$class\".");
