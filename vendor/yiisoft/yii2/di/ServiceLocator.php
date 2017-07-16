@@ -58,7 +58,7 @@ class ServiceLocator extends Component
     private $_components = [];
     /**
      * @var array component definitions indexed by their IDs
-     * 组件配置
+     * 组件属性配置
      */
     private $_definitions = [];
 

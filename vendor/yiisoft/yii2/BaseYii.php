@@ -338,16 +338,27 @@ class BaseYii
      * @return object the created object
      * @throws InvalidConfigException if the configuration is invalid.
      * @see \yii\di\Container
+     * is_callable('function () {echo "111";}',true) 参数是个字符串 这种方式调用返回true 如果第二个参数为false 返回false
+     * is_callable(function () {echo "111";}') 这种方式不管第二个参数是true还是false都会返回true
+     * is_callable(array('class','method')) 这中方式如果method没有定义 第二个参数为false返回false 否则返回true
      */
     public static function createObject($type, array $params = [])
     {
+        //$type就是对象名
         if (is_string($type)) {
             return static::$container->get($type, $params);
-        } elseif (is_array($type) && isset($type['class'])) {
+        }
+        //type是个数组 组件配置
+        elseif (is_array($type) && isset($type['class'])) {
             $class = $type['class'];
             unset($type['class']);
             return static::$container->get($class, $params, $type);
-        } elseif (is_callable($type, true)) {
+        }
+        //回调函数 这两种方式都会返回true
+        //is_callable('function () {echo "111";}',true) 匿名函数
+        //is_callable(array('class','method'),true)
+        //true仅仅检查语法是否符合规范
+        elseif (is_callable($type, true)) {
             return static::$container->invoke($type, $params); //回调函数
         } elseif (is_array($type)) {
             throw new InvalidConfigException('Object configuration must be an array containing a "class" element.');

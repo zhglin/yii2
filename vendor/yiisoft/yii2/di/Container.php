@@ -106,12 +106,12 @@ class Container extends Component
     private $_singletons = [];
     /**
      * @var array object definitions indexed by their types
-     * 组件配置
+     * 实例配置
      */
     private $_definitions = [];
     /**
      * @var array constructor parameters indexed by object types
-     * 组件的额外参数
+     * 构造函数的参数
      */
     private $_params = [];
     /**
@@ -151,7 +151,7 @@ class Container extends Component
      * @return object an instance of the requested class.
      * @throws InvalidConfigException if the class cannot be recognized or correspond to an invalid definition
      * @throws NotInstantiableException If resolved to an abstract class or an interface (since 2.0.9)
-     * $params是对象构造函数中需要的变量
+     * $params是对象构造函数中需要的变量值
      * $config是对象的属性值
      * $class是对象名
      */
@@ -161,29 +161,33 @@ class Container extends Component
             // singleton
             return $this->_singletons[$class];
         }
-        //没有通过 Yii::$container 进行设置的class
+        //没有通过 Yii::$container 进行注入的class
         elseif (!isset($this->_definitions[$class])) {
             return $this->build($class, $params, $config);
         }
 
         $definition = $this->_definitions[$class];
-
+        //注入的是回调函数
+        //mergeParams 对构造函数中的参数进行替换 _params里的只是参数名
         if (is_callable($definition, true)) {
+            //如果构造函数里面的有对象类型 需要是使用Instance::of('baz')方式进行传递 才会递归解决依赖关系
             $params = $this->resolveDependencies($this->mergeParams($class, $params));
             $object = call_user_func($definition, $this, $params, $config);
         } elseif (is_array($definition)) {
             $concrete = $definition['class'];
             unset($definition['class']);
 
-            $config = array_merge($definition, $config);
-            $params = $this->mergeParams($class, $params);
+            $config = array_merge($definition, $config); //属性合并
+            $params = $this->mergeParams($class, $params); //构造函数参数 合并
 
             if ($concrete === $class) {
                 $object = $this->build($class, $params, $config);
             } else {
+                //别名 如果别名对应的class已经实例化 就可以不用再次进行build
                 $object = $this->get($concrete, $params, $config);
             }
         } elseif (is_object($definition)) {
+            //直接就是对象 set('pageCache', new FileCache);
             return $this->_singletons[$class] = $definition;
         } else {
             throw new InvalidConfigException('Unexpected object definition type: ' . gettype($definition));
@@ -258,6 +262,9 @@ class Container extends Component
      * @param array $params the list of constructor parameters. The parameters will be passed to the class
      * constructor when [[get()]] is called.
      * @return $this the container itself
+     * $class 对象名 接口名 别名
+     * $params 这里传的只是构造函数所需的参数名称
+     * 回调函数的规则 function ($container, $params, $config)
      */
     public function set($class, $definition = [], array $params = [])
     {
@@ -326,19 +333,27 @@ class Container extends Component
      * @param string|array|callable $definition the class definition
      * @return array the normalized class definition
      * @throws InvalidConfigException if the definition is invalid.
-     * 转换成规范的组件配置
+     * 转换成规范的配置
      */
     protected function normalizeDefinition($class, $definition)
     {
+        //$container->set('yii\db\Connection'); 构造函数中使用
         if (empty($definition)) {
             return ['class' => $class];
-        } elseif (is_string($definition)) {
+        }
+        // $container->set('yii\mail\MailInterface', 'yii\swiftmailer\Mailer'); 构造函数使用
+        // $container->set('foo', 'yii\db\Connection');别名
+        elseif (is_string($definition)) {
             return ['class' => $definition];
-        } elseif (is_callable($definition, true) || is_object($definition)) {
+        }
+        //回调函数 对象实例
+        elseif (is_callable($definition, true) || is_object($definition)) {
             return $definition;
-        } elseif (is_array($definition)) {
+        }
+        //数组
+        elseif (is_array($definition)) {
             if (!isset($definition['class'])) {
-                if (strpos($class, '\\') !== false) {
+                if (strpos($class, '\\') !== false) { //命名空间
                     $definition['class'] = $class;
                 } else {
                     throw new InvalidConfigException("A class definition requires a \"class\" member.");
@@ -372,10 +387,11 @@ class Container extends Component
     protected function build($class, $params, $config)
     {
         /* @var $reflection ReflectionClass */
+        //getDependencies 只返回构造函数所需要的参数信息
         list ($reflection, $dependencies) = $this->getDependencies($class);
 
         /*
-         * 这里对构造函数的值做替换 如果构造函数中需要的非默认值 没有被替换掉具体的值 resolveDependencies会抛异常
+         * 根据$params中的参数对构造函数的值做替换 如果构造函数中需要的非默认值 没有被替换掉具体的值 resolveDependencies会抛异常
          * 直接用实例替换 减少build
          * Yii::createObject(yii\debug\models\timeline\Svg,[$this]);
          *  Svg的构造函数public function __construct(TimelinePanel $panel, $config = [])
@@ -383,12 +399,13 @@ class Container extends Component
          * $id变量替换
          * __construct($id, $controller, $config = [])
          * Yii::createObject($actionMap[$id], [$id, $this]);
+         * 需要的对象类型如果不传就要放非对象类型的后面
          */
         foreach ($params as $index => $param) {
             $dependencies[$index] = $param;
         }
 
-        //对于$dependencies中的instance对象进行递归 获取依赖对象
+        //对$dependencies中的instance对象进行递归 获取依赖对象
         $dependencies = $this->resolveDependencies($dependencies, $reflection);
 
         /*
@@ -484,6 +501,7 @@ class Container extends Component
      * @param ReflectionClass $reflection the class reflection associated with the dependencies
      * @return array the resolved dependencies
      * @throws InvalidConfigException if a dependency cannot be resolved or if a dependency cannot be fulfilled.
+     * 如果构造函数中需要的对象类型没有传 则在这里进行进行获取替换
      */
     protected function resolveDependencies($dependencies, $reflection = null)
     {
@@ -527,13 +545,15 @@ class Container extends Component
      * @throws NotInstantiableException If resolved to an abstract class or an interface (since 2.0.9)
      * @since 2.0.7
      * 组件内容是个回调函数
+     * 如果params里面有对象类型 可以传实例 或者 名称是组件的名称 di中的名称（会递归的解决依赖关系）
+     * 处理$params参数 补上没传的参数(只能是组件或者di中注入的参数) 处理依赖
      */
     public function invoke(callable $callback, $params = [])
     {
-        if (is_callable($callback)) {
+        if (is_callable($callback)) { //is_callable(array('class','method')) 返回true （method必须存在 __call也不行，静态函数可以 private返回false
             return call_user_func_array($callback, $this->resolveCallableDependencies($callback, $params));
         } else {
-            return call_user_func_array($callback, $params);
+            return call_user_func_array($callback, $params);//is_callable('function () {echo "111";}') 返回false
         }
     }
 
@@ -552,29 +572,37 @@ class Container extends Component
      */
     public function resolveCallableDependencies(callable $callback, $params = [])
     {
+        //$callback是个数组 [class,method] 对象中的函数
         if (is_array($callback)) {
-            $reflection = new \ReflectionMethod($callback[0], $callback[1]);
-        } else {
+            $reflection = new \ReflectionMethod($callback[0], $callback[1]); //class method
+        } else { //非对象中的函数
             $reflection = new \ReflectionFunction($callback);
         }
 
         $args = [];
 
+        //是否是key=>value 形式的关联数组
         $associative = ArrayHelper::isAssociative($params);
 
+        //获取函数的所有参数对象
         foreach ($reflection->getParameters() as $param) {
             $name = $param->getName();
-            if (($class = $param->getClass()) !== null) {
+            //如果是个对象类型 必须在参数的前面写名类型
+            if (($class = $param->getClass()) !== null) { //此参数是个对象类型
                 $className = $class->getName();
+                //如果$params是个关联数组 并且$params[$name]存在并且是个$className类型
                 if ($associative && isset($params[$name]) && $params[$name] instanceof $className) {
                     $args[] = $params[$name];
                     unset($params[$name]);
-                } elseif (!$associative && isset($params[0]) && $params[0] instanceof $className) {
+                }//params不是关联数组 因为上面把是关联数组的参数从params中unset掉了 这里又被array_shift掉了 所以下标始终是0
+                elseif (!$associative && isset($params[0]) && $params[0] instanceof $className) {
                     $args[] = array_shift($params);
-                } elseif (isset(Yii::$app) && Yii::$app->has($name) && ($obj = Yii::$app->get($name)) instanceof $className) {
+                }//如果参数中没传 或者类型不匹配 从组件中根据参数名获取 不是di中注入的
+                elseif (isset(Yii::$app) && Yii::$app->has($name) && ($obj = Yii::$app->get($name)) instanceof $className) {
                     $args[] = $obj;
                 } else {
                     // If the argument is optional we catch not instantiable exceptions
+                    //从di里面找 捕捉到异常说明 di里面也没有 如果此param是个合法的可选参数 就给默认值
                     try {
                         $args[] = $this->get($className);
                     } catch (NotInstantiableException $e) {
@@ -586,19 +614,20 @@ class Container extends Component
                     }
 
                 }
-            } elseif ($associative && isset($params[$name])) {
+            } elseif ($associative && isset($params[$name])) { //关联数组 并且传了参数
                 $args[] = $params[$name];
                 unset($params[$name]);
-            } elseif (!$associative && count($params)) {
+            } elseif (!$associative && count($params)) { //非关联数组 还有值
                 $args[] = array_shift($params);
-            } elseif ($param->isDefaultValueAvailable()) {
+            } elseif ($param->isDefaultValueAvailable()) { //没传参数 默认值合法
                 $args[] = $param->getDefaultValue();
-            } elseif (!$param->isOptional()) {
+            } elseif (!$param->isOptional()) { //https://stackoverflow.com/questions/23774355/php-reflectionparameter-isoptional-vs-isdefaultvalueavailable
                 $funcName = $reflection->getName();
                 throw new InvalidConfigException("Missing required parameter \"$name\" when calling \"$funcName\".");
             }
         }
 
+        //传的参数多于函数需要的参数 这是合法的
         foreach ($params as $value) {
             $args[] = $value;
         }
