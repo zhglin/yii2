@@ -429,6 +429,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * @param string $attribute the name of the attribute whose applicable validators should be returned.
      * If this is null, the validators for ALL attributes in the model will be returned.
      * @return \yii\validators\Validator[] the validators applicable to the current [[scenario]].
+     * 获取符合当前场景下的验证器
      */
     public function getActiveValidators($attribute = null)
     {
@@ -478,6 +479,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      *
      * @param string $attribute attribute name
      * @return bool whether the attribute is required
+     * 检查$attribute是否是必填项 用在ActiveField.php中 前端css展示*
      */
     public function isAttributeRequired($attribute)
     {
@@ -676,6 +678,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * If it is an array, only the attributes in the array will be returned.
      * @param array $except list of attributes whose value should NOT be returned.
      * @return array attribute values (name => value).
+     * 获取当前model的属性值 $names = null 返回所有属性名
      */
     public function getAttributes($names = null, $except = [])
     {
@@ -832,13 +835,13 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * @param string $formName the form name to use to load the data into the model.
      * If not set, [[formName()]] is used.
      * @return bool whether `load()` found the expected form in `$data`.
-     * $data是$_POST,$_GET中的数据
+     * $data是$_POST,$_GET中的数据 其他的传输方式也可以 只要formName为'' 直接给数组
      * 根据输入的数据为model赋值
      */
     public function load($data, $formName = null)
     {
         $scope = $formName === null ? $this->formName() : $formName;
-        //todo 应该是get的数据
+        //应该是get的数据
         if ($scope === '' && !empty($data)) {
             $this->setAttributes($data);
 
