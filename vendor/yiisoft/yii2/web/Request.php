@@ -393,7 +393,7 @@ class Request extends \yii\base\Request
     public function getBodyParams()
     {
         if ($this->_bodyParams === null) {
-            if (isset($_POST[$this->methodParam])) {
+            if (isset($_POST[$this->methodParam])) { //报头里的http method
                 $this->_bodyParams = $_POST;
                 unset($this->_bodyParams[$this->methodParam]);
                 return $this->_bodyParams;

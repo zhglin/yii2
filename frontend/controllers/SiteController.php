@@ -91,6 +91,14 @@ class SiteController extends Controller
         if (!Yii::$app->user->isGuest) {
             return $this->goHome();
         }
+        /*
+         * _csrf-frontend:SyTD3WiZIpMz74B-6DI4oB6MvV0RAYL0LU99d7BvLCaUadLRGU81vnObTFCaqxG_DEP0vmMMplKdw78KA_m6RA==
+            LoginForm[username]:11111
+            LoginForm[password]:1111111
+            LoginForm[rememberMe]:0
+            LoginForm[rememberMe]:1
+            login-button:
+         */
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {

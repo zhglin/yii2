@@ -120,11 +120,13 @@ class Validator extends Component
     /**
      * @var array|string scenarios that the validator can be applied to. For multiple scenarios,
      * please specify them as an array; for single scenario, you may use either a string or an array.
+     * 场景
      */
     public $on = [];
     /**
      * @var array|string scenarios that the validator should not be applied to. For multiple scenarios,
      * please specify them as an array; for single scenario, you may use either a string or an array.
+     * except的场景
      */
     public $except = [];
     /**
@@ -149,6 +151,7 @@ class Validator extends Component
      * If not set, [[isEmpty()]] will be used to check if a value is empty. The signature
      * of the callable should be `function ($value)` which returns a boolean indicating
      * whether the value is empty.
+     * 是否为空的判定规则  回调函数 'isEmpty' => function ($value) {return empty($value)};
      */
     public $isEmpty;
     /**
@@ -210,17 +213,17 @@ class Validator extends Component
         //需要验证的属性名
         $params['attributes'] = $attributes;
 
-        //匿名函数 或者是 $model中的函数  使用InlineValidator验证器
+        //Closure匿名函数 或者是 $model中的函数  使用InlineValidator验证器
         if ($type instanceof \Closure || $model->hasMethod($type)) {
             // method-based validator
             $params['class'] = __NAMESPACE__ . '\InlineValidator';
             $params['method'] = $type;
         } else {
-            //是否是内建的验证器
+            //内建的验证器
             if (isset(static::$builtInValidators[$type])) {
                 $type = static::$builtInValidators[$type];
             }
-            //如果是个数组 需要[class=>$type]
+            //扩展的  [class=> value]
             if (is_array($type)) {
                 $params = array_merge($type, $params);
             } else {
@@ -392,6 +395,7 @@ class Validator extends Component
      *
      * @param string $scenario scenario name
      * @return bool whether the validator applies to the specified scenario.
+     * 是否符合当前的验证器规则 scenario不在except中 并且(on为空或者scenario在on中
      */
     public function isActive($scenario)
     {

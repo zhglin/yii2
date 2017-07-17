@@ -53,7 +53,6 @@ use yii\validators\Validator;
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
- * 表单对象
  */
 class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayable
 {
@@ -83,6 +82,9 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
     private $_validators;
     /**
      * @var string current scenario
+     * 指定当前的场景
+     * 场景可以用来减验证的次数
+     * 如果不指定使用default 进行全的规则验证
      */
     private $_scenario = self::SCENARIO_DEFAULT;
 
@@ -181,14 +183,17 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * are being validated by the validation rules that apply to the scenario.
      *
      * @return array a list of scenarios and the corresponding active attributes.
+     * 根据rules中的on  except 不同场景下需要验证的属性
      */
     public function scenarios()
     {
         $scenarios = [self::SCENARIO_DEFAULT => []];
         foreach ($this->getValidators() as $validator) {
+            //取出来所有的scenario  $validator->on是个数组
             foreach ($validator->on as $scenario) {
                 $scenarios[$scenario] = [];
             }
+            //取出来所有的except 排除的场景
             foreach ($validator->except as $scenario) {
                 $scenarios[$scenario] = [];
             }
@@ -196,7 +201,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
         $names = array_keys($scenarios);
 
         foreach ($this->getValidators() as $validator) {
-            if (empty($validator->on) && empty($validator->except)) {
+            if (empty($validator->on) && empty($validator->except)) { //所有场景下都要进行验证
                 foreach ($names as $name) {
                     foreach ($validator->attributes as $attribute) {
                         $scenarios[$name][$attribute] = true;
@@ -204,14 +209,14 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
                 }
             } elseif (empty($validator->on)) {
                 foreach ($names as $name) {
-                    if (!in_array($name, $validator->except, true)) {
+                    if (!in_array($name, $validator->except, true)) { //不在except中的场景
                         foreach ($validator->attributes as $attribute) {
                             $scenarios[$name][$attribute] = true;
                         }
                     }
                 }
             } else {
-                foreach ($validator->on as $name) {
+                foreach ($validator->on as $name) {  // on中的场景
                     foreach ($validator->attributes as $attribute) {
                         $scenarios[$name][$attribute] = true;
                     }
@@ -219,6 +224,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
             }
         }
 
+        //只返会非空的场景
         foreach ($scenarios as $scenario => $attributes) {
             if (!empty($attributes)) {
                 $scenarios[$scenario] = array_keys($attributes);
@@ -258,6 +264,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * By default, this method returns all public non-static properties of the class.
      * You may override this method to change the default behavior.
      * @return array list of attribute names.
+     * 当前model的属性名
      */
     public function attributes()
     {
@@ -348,10 +355,12 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
 
         $scenarios = $this->scenarios();
         $scenario = $this->getScenario();
+        //给了一个rules中不存在的场景
         if (!isset($scenarios[$scenario])) {
             throw new InvalidParamException("Unknown scenario: $scenario");
         }
 
+        //需要进行验证的属性名
         if ($attributeNames === null) {
             $attributeNames = $this->activeAttributes();
         }
@@ -443,9 +452,10 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
     {
         $validators = new ArrayObject;
         foreach ($this->rules() as $rule) {
-            if ($rule instanceof Validator) { //独立验证器
+            if ($rule instanceof Validator) { //todo
                 $validators->append($rule);
             } elseif (is_array($rule) && isset($rule[0], $rule[1])) { // attributes, validator type
+                //rule 的前面两个是需要验证的属性以及验证的类型 后面的参数作为类型的属性
                 $validator = Validator::createValidator($rule[1], $this, (array) $rule[0], array_slice($rule, 2));
                 $validators->append($validator);
             } else {
@@ -690,6 +700,8 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * A safe attribute is one that is associated with a validation rule in the current [[scenario]].
      * @see safeAttributes()
      * @see attributes()
+     * 在当前场景下的attributes才需要赋值 以!开头的除外
+     * $safeOnly = true 只对rule里面的属性赋值 否则对全部属性赋值
      */
     public function setAttributes($values, $safeOnly = true)
     {
@@ -698,7 +710,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
             foreach ($values as $name => $value) {
                 if (isset($attributes[$name])) {
                     $this->$name = $value;
-                } elseif ($safeOnly) {
+                } elseif ($safeOnly) { //不存在的属性
                     $this->onUnsafeAttribute($name, $value);
                 }
             }
@@ -746,6 +758,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
     /**
      * Returns the attribute names that are safe to be massively assigned in the current scenario.
      * @return string[] safe attribute names
+     * 需要进行验证的属性
      */
     public function safeAttributes()
     {
@@ -756,6 +769,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
         }
         $attributes = [];
         foreach ($scenarios[$scenario] as $attribute) {
+            //第一个字符不是 !
             if ($attribute[0] !== '!' && !in_array('!' . $attribute, $scenarios[$scenario])) {
                 $attributes[] = $attribute;
             }
@@ -767,6 +781,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
     /**
      * Returns the attribute names that are subject to validation in the current scenario.
      * @return string[] safe attribute names
+     * 返回根据当前场景需要验证的属性
      */
     public function activeAttributes()
     {
@@ -817,13 +832,13 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * @param string $formName the form name to use to load the data into the model.
      * If not set, [[formName()]] is used.
      * @return bool whether `load()` found the expected form in `$data`.
-     * $data是表单中的数据
-     * $formName是当前表单对象
-     * 为formName对象赋值
+     * $data是$_POST,$_GET中的数据
+     * 根据输入的数据为model赋值
      */
     public function load($data, $formName = null)
     {
         $scope = $formName === null ? $this->formName() : $formName;
+        //todo 应该是get的数据
         if ($scope === '' && !empty($data)) {
             $this->setAttributes($data);
 
