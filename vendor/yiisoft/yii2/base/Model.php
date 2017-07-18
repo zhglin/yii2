@@ -74,6 +74,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
 
     /**
      * @var array validation errors (attribute name => array of errors)
+     * 所有验证器验证的错误结果
      */
     private $_errors;
     /**
@@ -342,6 +343,7 @@ class Model extends Component implements IteratorAggregate, ArrayAccess, Arrayab
      * @param bool $clearErrors whether to call [[clearErrors()]] before performing validation
      * @return bool whether the validation is successful without any error.
      * @throws InvalidParamException if the current scenario is unknown.
+     * 可以只进行部分attributeNames的验证
      */
     public function validate($attributeNames = null, $clearErrors = true)
     {

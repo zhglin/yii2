@@ -120,7 +120,7 @@ class Validator extends Component
     /**
      * @var array|string scenarios that the validator can be applied to. For multiple scenarios,
      * please specify them as an array; for single scenario, you may use either a string or an array.
-     * 场景
+     * 场景  on 和 except中如果存在同一个scenario 忽略except
      */
     public $on = [];
     /**
@@ -132,11 +132,14 @@ class Validator extends Component
     /**
      * @var bool whether this validation rule should be skipped if the attribute being validated
      * already has some validation error according to some previous rules. Defaults to true.
+     * 如果此attribute在别的验证器里验证过 并且出错 如果$skipOnError为true 就跳过当前的验证
+     * 一个属性有多个验证规则
      */
     public $skipOnError = true;
     /**
      * @var bool whether this validation rule should be skipped if the attribute value
      * is null or an empty string.
+     * 如果$isEmpty判断为空 并且 $skipOnEmpty为true这跳过此attribute的验证
      */
     public $skipOnEmpty = true;
     /**
@@ -171,6 +174,7 @@ class Validator extends Component
      * ```
      *
      * @see whenClient
+     * 回调函数只有此函数为true 才会使用当前的验证器进行验证
      */
     public $when;
     /**
@@ -252,9 +256,12 @@ class Validator extends Component
      * @param array|null $attributes the list of attributes to be validated.
      * Note that if an attribute is not associated with the validator - it will be
      * ignored. If this parameter is null, every attribute listed in [[attributes]] will be validated.
+     * Validator是所有验证器类的父类
+     * 此函数是验证之前的通用处理
      */
     public function validateAttributes($model, $attributes = null)
     {
+        //获取需要此验证器需要进行验证的attribute
         if (is_array($attributes)) {
             $newAttributes = [];
             foreach ($attributes as $attribute) {
@@ -267,6 +274,7 @@ class Validator extends Component
             $attributes = $this->getAttributeNames();
         }
 
+        //是否能跳过
         foreach ($attributes as $attribute) {
             $skip = $this->skipOnError && $model->hasErrors($attribute)
                 || $this->skipOnEmpty && $this->isEmpty($model->$attribute);
@@ -283,6 +291,10 @@ class Validator extends Component
      * Child classes must implement this method to provide the actual validation logic.
      * @param \yii\base\Model $model the data model to be validated
      * @param string $attribute the name of the attribute to be validated.
+     * 具体的验证方法
+     * 可以通过model进行单一的属性验证
+     * 不通过在model中填写rules规则
+     * SluggableBehavior.php validateSlug
      */
     public function validateAttribute($model, $attribute)
     {
@@ -298,6 +310,10 @@ class Validator extends Component
      * @param mixed $value the data value to be validated.
      * @param string $error the error message to be returned, if the validation fails.
      * @return bool whether the data is valid.
+     * 不通过model进行单独的属性验证
+     *  $email = 'test@example.com';
+     *  $validator = new yii\validators\EmailValidator();
+     *  $validator->validate($email, $error)
      */
     public function validate($value, &$error = null)
     {
@@ -327,6 +343,8 @@ class Validator extends Component
      * @return array|null the error message and the parameters to be inserted into the error message.
      * Null should be returned if the data is valid.
      * @throws NotSupportedException if the validator does not supporting data validation without a model
+     * 单独验证器
+     * 需要具体的验证器 也就是此对象的子类
      */
     protected function validateValue($value)
     {
@@ -432,6 +450,7 @@ class Validator extends Component
      * Note that this method is different from PHP empty(). It will return false when the value is 0.
      * @param mixed $value the value to be checked
      * @return bool whether the value is empty
+     * 验证是否属性为空
      */
     public function isEmpty($value)
     {

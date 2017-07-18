@@ -92,6 +92,7 @@ class BaseUrl
      *
      * @return string the generated URL
      * @throws InvalidParamException a relative route is given while there is no active controller
+     * 这里通过url规则进行生成
      */
     public static function toRoute($route, $scheme = false)
     {
@@ -215,6 +216,7 @@ class BaseUrl
      *
      * @return string the generated URL
      * @throws InvalidParamException a relative route is given while there is no active controller
+     * 可以不通过url规则进行生成
      */
     public static function to($url = '', $scheme = false)
     {
