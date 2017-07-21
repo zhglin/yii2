@@ -22,6 +22,12 @@ namespace yii\caching;
  */
 class DummyCache extends Cache
 {
+    /*
+     * 这个组件的目的是为了简化那些需要查询缓存有效性的代码。 例如，在开发中如果服务器没有实际的缓存支持，用它配置 一个缓存组件。
+     * 一个真正的缓存服务启用后，可以再切换为使用相应的缓存组件。
+     * 两种条件下你都可以使用同样的代码 Yii::$app->cache->get($key) 尝试从缓存中取回数据而不用担心 Yii::$app->cache 可能是 null
+     */
+
     /**
      * Retrieves a value from cache with a specified key.
      * This is the implementation of the method declared in the parent class.

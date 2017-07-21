@@ -34,6 +34,10 @@ class ApcCache extends Cache
      */
     public $useApcu = false;
 
+    /*
+     * apc HP 5.5.0 及后续版本中已经绑定了 OPcache 扩展 https://secure.php.net/manual/zh/book.opcache.php
+     * apcu完全类似apc的php扩展，保留了数据缓存功能，去掉了opcode缓存
+     */
 
     /**
      * Initializes this application component.

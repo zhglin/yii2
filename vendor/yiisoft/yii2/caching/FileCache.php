@@ -32,15 +32,18 @@ class FileCache extends Cache
      * conflict.
      *
      * To ensure interoperability, only alphanumeric characters should be used.
+     * 如果$directoryLevel 不等于1 的话 缓存前缀会造成大量文件在同一目录中
      */
     public $keyPrefix = '';
     /**
      * @var string the directory to store cache files. You may use [path alias](guide:concept-aliases) here.
      * If not set, it will use the "cache" subdirectory under the application runtime path.
+     * 文件存储的目录
      */
     public $cachePath = '@runtime/cache';
     /**
      * @var string cache file suffix. Defaults to '.bin'.
+     * 文件后缀
      */
     public $cacheFileSuffix = '.bin';
     /**
@@ -48,12 +51,15 @@ class FileCache extends Cache
      * If the system has huge number of cache files (e.g. one million), you may use a bigger value
      * (usually no bigger than 3). Using sub-directories is mainly to ensure the file system
      * is not over burdened with a single directory having too many files.
+     * 目录层级 防止一个目录中有太多的文件
+     * 如果有变动 会造成缓存失效
      */
     public $directoryLevel = 1;
     /**
      * @var int the probability (parts per million) that garbage collection (GC) should be performed
      * when storing a piece of data in the cache. Defaults to 10, meaning 0.001% chance.
      * This number should be between 0 and 1000000. A value 0 means no GC will be performed at all.
+     * set add 随机进行过期清理
      */
     public $gcProbability = 10;
     /**
@@ -70,6 +76,10 @@ class FileCache extends Cache
      */
     public $dirMode = 0775;
 
+    /*
+     * 读写操作都要进行加锁 防止并发操作导致数据错误
+     * 过期时间是通过touch 修改文件的修改时间  如果文件修改时间小于time() 说明缓存过期
+     */
 
     /**
      * Initializes this component by ensuring the existence of the cache path.
@@ -77,6 +87,7 @@ class FileCache extends Cache
     public function init()
     {
         parent::init();
+        //转换成真实的目录
         $this->cachePath = Yii::getAlias($this->cachePath);
         if (!is_dir($this->cachePath)) {
             FileHelper::createDirectory($this->cachePath, $this->dirMode, true);
@@ -109,7 +120,7 @@ class FileCache extends Cache
     protected function getValue($key)
     {
         $cacheFile = $this->getCacheFile($key);
-
+        //内容修改时间
         if (@filemtime($cacheFile) > time()) {
             $fp = @fopen($cacheFile, 'r');
             if ($fp !== false) {
@@ -194,6 +205,7 @@ class FileCache extends Cache
      * Returns the cache file path given the cache key.
      * @param string $key cache key
      * @return string the cache file path
+     * 目录层级
      */
     protected function getCacheFile($key)
     {
@@ -229,6 +241,7 @@ class FileCache extends Cache
      * Defaults to false, meaning the actual deletion happens with the probability as specified by [[gcProbability]].
      * @param bool $expiredOnly whether to removed expired cache files only.
      * If false, all cache files under [[cachePath]] will be removed.
+     * $expiredOnly true只清理过期的文件 false清理所有文件
      */
     public function gc($force = false, $expiredOnly = true)
     {
@@ -243,6 +256,7 @@ class FileCache extends Cache
      * @param string $path the directory under which expired cache files are removed.
      * @param bool $expiredOnly whether to only remove expired cache files. If false, all files
      * under `$path` will be removed.
+     * 过期文件清理
      */
     protected function gcRecursive($path, $expiredOnly)
     {

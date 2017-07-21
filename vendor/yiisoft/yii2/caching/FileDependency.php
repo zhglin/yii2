@@ -29,6 +29,10 @@ class FileDependency extends Dependency
      */
     public $fileName;
 
+    /*
+     * 依赖文件的修改时间 filemtime
+     * 修改时间改变了 缓存失效
+     */
 
     /**
      * Generates the data needed to determine if dependency has been changed.
@@ -44,7 +48,7 @@ class FileDependency extends Dependency
         }
 
         $fileName = Yii::getAlias($this->fileName);
-        clearstatcache(false, $fileName);
+        clearstatcache(false, $fileName); //清除文件状态缓存
         return @filemtime($fileName);
     }
 }

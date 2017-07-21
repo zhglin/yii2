@@ -31,13 +31,24 @@ class ChainedDependency extends Dependency
      * Defaults to true, meaning if any of the dependencies has changed, this dependency is considered changed.
      * When it is set false, it means if one of the dependencies has NOT changed, this dependency
      * is considered NOT changed.
+     * true 有一个依赖对象的值有变动 就算失效
+     * false 有一个依赖对象值没变 就不算失效
      */
     public $dependOnAll = true;
 
+    /*
+     * $dependency = new \yii\caching\FileDependency(['fileName'=>'yanying.txt']);
+     * $dependency2 = new \yii\caching\DbDependency(['sql'=>'']);
+     * ChainedDependency = new \yii\caching\ChainedDependency(['dependencies'=>[$dependency,$dependency2]]);
+     * $cache->add('file_key','hello world',3000,ChainedDependency);
+     * 多个依赖
+     * $dependencies 每个依赖的具体实例
+     */
 
     /**
      * Evaluates the dependency by generating and saving the data related with dependency.
      * @param Cache $cache the cache component that is currently evaluating this dependency
+     * 为每个依赖对象获取依赖值 data
      */
     public function evaluateDependency($cache)
     {
@@ -51,6 +62,7 @@ class ChainedDependency extends Dependency
      * This method does nothing in this class.
      * @param Cache $cache the cache component that is currently evaluating this dependency
      * @return mixed the data needed to determine if dependency has been changed.
+     * 聚合对象 不需要单个对象的生成方法
      */
     protected function generateDependencyData($cache)
     {

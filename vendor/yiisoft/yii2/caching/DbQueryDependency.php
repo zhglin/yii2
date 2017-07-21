@@ -58,6 +58,11 @@ class DbQueryDependency extends Dependency
      */
     public $method;
 
+    /*
+     * DbDependency只能传递sql
+     * DbQueryDependency 传递的是QueryInterface对象实例 (查询对象)
+     * $method指的是QueryInterface对象的方法 如果不指定 默认使用one
+     */
 
     /**
      * Generates the data needed to determine if dependency is changed.

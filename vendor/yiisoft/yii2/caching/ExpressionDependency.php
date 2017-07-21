@@ -36,6 +36,11 @@ class ExpressionDependency extends Dependency
      */
     public $params;
 
+    /*
+     * 表达式
+     * $expression 可以为 call_user_func 要能够返回具体的值
+     *
+     */
 
     /**
      * Generates the data needed to determine if dependency has been changed.

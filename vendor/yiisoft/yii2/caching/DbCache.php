@@ -43,6 +43,7 @@ class DbCache extends Cache
      * After the DbCache object is created, if you want to change this property, you should only assign it
      * with a DB connection object.
      * Starting from version 2.0.2, this can also be a configuration array for creating the object.
+     * 数据库连接组件
      */
     public $db = 'db';
     /**
@@ -66,12 +67,14 @@ class DbCache extends Cache
      *
      * When using DbCache in a production server, we recommend you create a DB index for the 'expire'
      * column in the cache table to improve the performance.
+     * 表名
      */
     public $cacheTable = '{{%cache}}';
     /**
      * @var int the probability (parts per million) that garbage collection (GC) should be performed
      * when storing a piece of data in the cache. Defaults to 100, meaning 0.01% chance.
      * This number should be between 0 and 1000000. A value 0 meaning no GC will be performed at all.
+     * set add是随机启动清理过期的缓存
      */
     public $gcProbability = 100;
 
@@ -253,6 +256,7 @@ class DbCache extends Cache
      * Removes the expired data values.
      * @param bool $force whether to enforce the garbage collection regardless of [[gcProbability]].
      * Defaults to false, meaning the actual deletion happens with the probability as specified by [[gcProbability]].
+     * 随机删除缓存
      */
     public function gc($force = false)
     {

@@ -33,6 +33,12 @@ class TagDependency extends Dependency
      */
     public $tags = [];
 
+    /*
+     * https://github.com/yiisoft/yii2/blob/master/tests/framework/caching/TagDependencyTest.php
+     * 利用当前缓存存储依赖值
+     * tags里面的key值缓存中不存在 touchKeys设置为microtime()
+     * invalidate此函数可以改变tags中缓存值 使缓存失效
+     */
 
     /**
      * Generates the data needed to determine if dependency has been changed.
@@ -70,6 +76,7 @@ class TagDependency extends Dependency
      * Invalidates all of the cached data items that are associated with any of the specified [[tags]].
      * @param Cache $cache the cache component that caches the data items
      * @param string|array $tags
+     * 缓存作废
      */
     public static function invalidate($cache, $tags)
     {

@@ -78,11 +78,13 @@ class MemCache extends Cache
      * persists between requests, you may specify a unique ID for the instance. All instances created with the
      * same ID will share the same connection.
      * @see http://ca2.php.net/manual/en/memcached.construct.php
+     * 持久链接
      */
     public $persistentId;
     /**
      * @var array options for Memcached. This property is used only when [[useMemcached]] is true.
      * @see http://ca2.php.net/manual/en/memcached.setoptions.php
+     * https://secure.php.net/manual/zh/memcached.constants.php memcached的各种选项
      */
     public $options;
     /**
@@ -102,6 +104,8 @@ class MemCache extends Cache
     private $_cache;
     /**
      * @var array list of memcache server configurations
+     * 服务器配置
+     *  建立连接需要的配置
      */
     private $_servers = [];
 
@@ -150,6 +154,7 @@ class MemCache extends Cache
      *
      * @param \Memcached $cache
      * @param MemCacheServer[] $servers
+     * 持久连接中存在的servers不再添加
      */
     protected function addMemcachedServers($cache, $servers)
     {
@@ -211,6 +216,7 @@ class MemCache extends Cache
      * Returns the underlying memcache (or memcached) object.
      * @return \Memcache|\Memcached the memcache (or memcached) object used by this cache component.
      * @throws InvalidConfigException if memcache or memcached extension is not loaded
+     * 获取memcache连接
      */
     public function getMemcache()
     {
@@ -223,8 +229,8 @@ class MemCache extends Cache
             if ($this->useMemcached) {
                 $this->_cache = $this->persistentId !== null ? new \Memcached($this->persistentId) : new \Memcached;
                 if ($this->username !== null || $this->password !== null) {
-                    $this->_cache->setOption(\Memcached::OPT_BINARY_PROTOCOL, true);
-                    $this->_cache->setSaslAuthData($this->username, $this->password);
+                    $this->_cache->setOption(\Memcached::OPT_BINARY_PROTOCOL, true); //开启二进制协议
+                    $this->_cache->setSaslAuthData($this->username, $this->password);//账号密码
                 }
                 if (!empty($this->options)) {
                     $this->_cache->setOptions($this->options);

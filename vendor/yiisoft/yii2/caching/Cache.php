@@ -59,6 +59,7 @@ abstract class Cache extends Component implements \ArrayAccess
      * storage is being used by different applications.
      *
      * To ensure interoperability, only alphanumeric characters should be used.
+     * 缓存键前缀
      */
     public $keyPrefix;
     /**
@@ -70,6 +71,10 @@ abstract class Cache extends Component implements \ArrayAccess
      * cache component without any serialization or deserialization. You should not turn off serialization if
      * you are using [[Dependency|cache dependency]], because it relies on data serialization. Also, some
      * implementations of the cache can not correctly save and retrieve data different from a string type.
+     * 是否需要进行序列化
+     * ===null默认的序列化 serialize()  unserialize()
+     * ===false不做序列化
+     * array(序列化,反序列化)
      */
     public $serializer;
     /**
@@ -78,7 +83,13 @@ abstract class Cache extends Component implements \ArrayAccess
      * @since 2.0.11
      */
     public $defaultDuration = 0;
-
+    /*
+     * get() set()对外提供的功能 是在具体的缓存对象的get() set()函数的基础上增加了序列化 以及 依赖的处理 内部使用getValue() setValue()进行存储
+     * mget()  mset()是获取多个缓存对象的方法 内部调用getValues(),setValues() 在此基础上增加序列化以及 依赖的功能
+     * getValues() setValues() 如果集体的缓存对象提供的获取多个值的方法 可以进行重写 但是这两个只是获取,存储原始的数据值 没有序列化的工作 以及依赖 对外使用mget mset
+     * add() madd() 存在返回false,不存在设置 内部调用addValue(),addValues() 具体的缓存对象要实现addValue()
+     * delete()  flush()  内部使用deleteValue() flushValues() 具体的缓存对象需要实现
+     */
 
     /**
      * Builds a normalized cache key from a given key.
@@ -89,6 +100,9 @@ abstract class Cache extends Component implements \ArrayAccess
      *
      * @param mixed $key the key to be normalized
      * @return string the generated cache key
+     * 根据键类型以及长度生成新的键名
+     * 非字符串 md5
+     * 字符串 并且长度不足 md5
      */
     public function buildKey($key)
     {
@@ -111,7 +125,7 @@ abstract class Cache extends Component implements \ArrayAccess
     public function get($key)
     {
         $key = $this->buildKey($key);
-        $value = $this->getValue($key);
+        $value = $this->getValue($key); //具体的子类实现 获取值
         if ($value === false || $this->serializer === false) {
             return $value;
         } elseif ($this->serializer === null) {
@@ -137,6 +151,7 @@ abstract class Cache extends Component implements \ArrayAccess
      * @param mixed $key a key identifying the cached value. This can be a simple string or
      * a complex data structure consisting of factors representing the key.
      * @return bool true if a value exists in cache, false if the value is not in the cache or expired.
+     * 是否存在 getValue来判断
      */
     public function exists($key)
     {
@@ -157,6 +172,7 @@ abstract class Cache extends Component implements \ArrayAccess
      * is returned in terms of (key, value) pairs.
      * If a value is not cached or expired, the corresponding array value will be false.
      * @deprecated This method is an alias for [[multiGet()]] and will be removed in 2.1.0.
+     * 获取多个keys
      */
     public function mget($keys)
     {
@@ -173,6 +189,7 @@ abstract class Cache extends Component implements \ArrayAccess
      * is returned in terms of (key, value) pairs.
      * If a value is not cached or expired, the corresponding array value will be false.
      * @since 2.0.7
+     * 获取多个 进行序列化 以及判断依赖
      */
     public function multiGet($keys)
     {
@@ -215,13 +232,19 @@ abstract class Cache extends Component implements \ArrayAccess
      * the corresponding value in the cache will be invalidated when it is fetched via [[get()]].
      * This parameter is ignored if [[serializer]] is false.
      * @return bool whether the value is successfully stored into cache
+     * 设置值 $dependency Dependency实例
+     * $dependency = new \yii\caching\FileDependency(['fileName'=>'yanying.txt']);
+     * $cache->add('file_key','hello world',3000,$dependency);
+     * 缓存依赖用来判断缓存是否失效
+     * 如果依赖的内容有变动 过期时间没到也会当做失效处理
+     * 每个依赖对象都会有个具体的依赖值 如果获取的缓存key的时候 依赖对象的值有变动则失效
      */
     public function set($key, $value, $duration = null, $dependency = null)
     {
         if ($duration === null) {
             $duration = $this->defaultDuration;
         }
-
+        //$dependency 对象实例
         if ($dependency !== null && $this->serializer !== false) {
             $dependency->evaluateDependency($this);
         }
@@ -348,6 +371,7 @@ abstract class Cache extends Component implements \ArrayAccess
      * the corresponding value in the cache will be invalidated when it is fetched via [[get()]].
      * This parameter is ignored if [[serializer]] is false.
      * @return bool whether the value is successfully stored into cache
+     * 不存在是添加 存在时返回失败
      */
     public function add($key, $value, $duration = 0, $dependency = null)
     {
@@ -443,6 +467,7 @@ abstract class Cache extends Component implements \ArrayAccess
      * this method should be overridden to exploit that feature.
      * @param array $keys a list of keys identifying the cached values
      * @return array a list of cached values indexed by the keys
+     * 只获取原始值 没有进行序列化
      */
     protected function getValues($keys)
     {
@@ -565,6 +590,7 @@ abstract class Cache extends Component implements \ArrayAccess
      * This parameter is ignored if [[serializer]] is `false`.
      * @return mixed result of $callable execution
      * @since 2.0.11
+     * 不存在 就通过回调函数生成值 然后存储
      */
     public function getOrSet($key, $callable, $duration = null, $dependency = null)
     {

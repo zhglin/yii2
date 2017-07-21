@@ -32,6 +32,10 @@ class WinCache extends Cache
      * a complex data structure consisting of factors representing the key.
      * @return bool true if a value exists in cache, false if the value is not in the cache or expired.
      */
+
+    /*
+     *微软推出的在Windows环境下的使用的
+     */
     public function exists($key)
     {
         $key = $this->buildKey($key);

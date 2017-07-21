@@ -22,6 +22,8 @@ namespace yii\caching;
  */
 class ZendDataCache extends Cache
 {
+    //http://www.cnblogs.com/terryglp/articles/1959483.html
+
     /**
      * Retrieves a value from cache with a specified key.
      * This is the implementation of the method declared in the parent class.

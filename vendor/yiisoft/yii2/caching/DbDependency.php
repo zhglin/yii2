@@ -39,6 +39,9 @@ class DbDependency extends Dependency
      */
     public $params = [];
 
+    /*
+     * 根据sql的执行结果
+     */
 
     /**
      * Generates the data needed to determine if dependency has been changed.

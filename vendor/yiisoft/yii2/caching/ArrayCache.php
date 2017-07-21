@@ -26,6 +26,9 @@ class ArrayCache extends Cache
 {
     private $_cache;
 
+    /*
+     * 可以作为本地请求的缓存 防止在一个请求内部多次处理或者获取数据
+     */
 
     /**
      * @inheritdoc
