@@ -194,12 +194,14 @@ abstract class Application extends Module
     public function __construct($config = [])
     {
         Yii::$app = $this;
+        //把当前的模块保存到$loadedModules中
         static::setInstance($this);
-
+        //设置应用开始的状态
         $this->state = self::STATE_BEGIN;
-
+        //预先处理下配置文件
         $this->preInit($config);
 
+        //组册统一的错误处理 exception error
         $this->registerErrorHandler($config);
 
         Component::__construct($config);
@@ -215,16 +217,18 @@ abstract class Application extends Module
      */
     public function preInit(&$config)
     {
+        //当前模块的id 每个模块都要指定一个唯一的id
         if (!isset($config['id'])) {
             throw new InvalidConfigException('The "id" configuration for the Application is required.');
         }
+        //项目的目录
         if (isset($config['basePath'])) {
             $this->setBasePath($config['basePath']);
             unset($config['basePath']);
         } else {
             throw new InvalidConfigException('The "basePath" configuration for the Application is required.');
         }
-
+        //yii的目录
         if (isset($config['vendorPath'])) {
             $this->setVendorPath($config['vendorPath']);
             unset($config['vendorPath']);
@@ -232,6 +236,7 @@ abstract class Application extends Module
             // set "@vendor"
             $this->getVendorPath();
         }
+        //用来记录执行中信息的目录 log debug
         if (isset($config['runtimePath'])) {
             $this->setRuntimePath($config['runtimePath']);
             unset($config['runtimePath']);
@@ -240,6 +245,7 @@ abstract class Application extends Module
             $this->getRuntimePath();
         }
 
+        //设置时区
         if (isset($config['timeZone'])) {
             $this->setTimeZone($config['timeZone']);
             unset($config['timeZone']);
@@ -247,6 +253,7 @@ abstract class Application extends Module
             $this->setTimeZone('UTC');
         }
 
+        //设置di对象的配置
         if (isset($config['container'])) {
             $this->setContainer($config['container']);
 
@@ -254,6 +261,7 @@ abstract class Application extends Module
         }
 
         // merge core components with custom components
+        //合并组件的配置
         foreach ($this->coreComponents() as $id => $component) {
             if (!isset($config['components'][$id])) {
                 $config['components'][$id] = $component;
@@ -335,6 +343,7 @@ abstract class Application extends Module
                 echo "Error: no errorHandler component is configured.\n";
                 exit(1);
             }
+            //注册到servicelocator中
             $this->set('errorHandler', $config['components']['errorHandler']);
             unset($config['components']['errorHandler']);
             $this->getErrorHandler()->register();

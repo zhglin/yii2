@@ -47,18 +47,22 @@ class ErrorHandler extends \yii\base\ErrorHandler
     public $errorAction;
     /**
      * @var string the path of the view file for rendering exceptions without call stack information.
+     * 信息比较少
      */
     public $errorView = '@yii/views/errorHandler/error.php';
     /**
      * @var string the path of the view file for rendering exceptions.
+     * exception的详细信息
      */
     public $exceptionView = '@yii/views/errorHandler/exception.php';
     /**
      * @var string the path of the view file for rendering exceptions and errors call stack element.
+     * 每条栈信息的渲染页面
      */
     public $callStackItemView = '@yii/views/errorHandler/callStackItem.php';
     /**
      * @var string the path of the view file for rendering previous exceptions.
+     * 异常链的上一个异常的视图
      */
     public $previousExceptionView = '@yii/views/errorHandler/previousException.php';
     /**
@@ -77,7 +81,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      */
     protected function renderException($exception)
     {
-        if (Yii::$app->has('response')) {
+        if (Yii::$app->has('response')) { //有没有生成response实例 response实例是在执行了action之后才会创建
             $response = Yii::$app->getResponse();
             // reset parameters of response to avoid interference with partially created response data
             // in case the error occurred while sending the response.
@@ -90,9 +94,38 @@ class ErrorHandler extends \yii\base\ErrorHandler
         }
         //设置状态码
         $response->setStatusCodeByException($exception);
-        //是否使用视图展示
+        //不同的exception显示不同的信息
+        /*  Exception
+         *      InvalidConfigException
+         *      NotSupportedException
+         *      UnknownClassException
+         *      UnknownPropertyException
+         *      UserException
+         *          InvalidRouteException
+         *          HttpException
+         *              BadRequestHttpException
+         *              ConflictHttpException
+         *              ForbiddenHttpException
+         *              GoneHttpException
+         *              MethodNotAllowedHttpException
+         *              NotAcceptableHttpException
+         *              NotFoundHttpException
+         *              RangeNotSatisfiableHttpException
+         *              ServerErrorHttpException
+         *              TooManyRequestsHttpException
+         *              UnauthorizedHttpException
+         *              UnprocessableEntityHttpException
+         *              UnsupportedMediaTypeHttpException
+         *      UrlNormalizerRedirectException
+         *  ErrorException
+         *  InvalidCallException
+         *  InvalidParamException
+         *      ViewNotFoundException
+         *  InvalidValueException
+         *  UnknownMethodException
+         */
         $useErrorView = $response->format === Response::FORMAT_HTML && (!YII_DEBUG || $exception instanceof UserException);
-
+        //有errorAction 会进行调用
         if ($useErrorView && $this->errorAction !== null) {
             $result = Yii::$app->runAction($this->errorAction);
             if ($result instanceof Response) {
@@ -128,6 +161,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * Converts an exception into an array.
      * @param \Exception|\Error $exception the exception being converted
      * @return array the array representation of the exception.
+     * 把exception实例转换成array
      */
     protected function convertExceptionToArray($exception)
     {
@@ -155,6 +189,8 @@ class ErrorHandler extends \yii\base\ErrorHandler
             }
         }
         if (($prev = $exception->getPrevious()) !== null) {
+            //异常链的前一个异常
+            //http://php.net/manual/zh/exception.getprevious.php
             $array['previous'] = $this->convertExceptionToArray($prev);
         }
 
@@ -165,6 +201,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * Converts special characters to HTML entities.
      * @param string $text to encode.
      * @return string encoded original text.
+     * 用于view的展示
      */
     public function htmlEncode($text)
     {
@@ -175,6 +212,10 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * Adds informational links to the given PHP type/class.
      * @param string $code type/class name to be linkified.
      * @return string linkified with HTML type/class name.
+     * $code
+     *  addTypeLinks(get_class($exception))
+     *  $handler->addTypeLinks("$class::$method")
+     *  获取一个到yii文档到链接
      */
     public function addTypeLinks($code)
     {
@@ -234,6 +275,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * @param string $_file_ the view file.
      * @param array $_params_ the parameters (name-value pairs) that will be extracted and made available in the view file.
      * @return string the rendering result
+     * 渲染view
      */
     public function renderFile($_file_, $_params_)
     {
@@ -255,6 +297,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * @param \Exception $exception the exception whose precursors should be rendered.
      * @return string HTML content of the rendered previous exceptions.
      * Empty string if there are none.
+     * 渲染exception链 中的上一个exception
      */
     public function renderPreviousExceptions($exception)
     {
@@ -274,6 +317,9 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * @param array $args array of method arguments.
      * @param int $index number of the call stack element.
      * @return string HTML content of the rendered call stack element.
+     * 每条的栈信息
+     * $begin $end 显示代码的开始行数-截止行数
+     * $index 第几条的栈信息
      */
     public function renderCallStackItem($file, $line, $class, $method, $args, $index)
     {
@@ -281,7 +327,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
         $begin = $end = 0;
         if ($file !== null && $line !== null) {
             $line--; // adjust line number from one-based to zero-based
-            $lines = @file($file);
+            $lines = @file($file); //把文件读入到数据中 每一行作为一个数组元素
             if ($line < 0 || $lines === false || ($lineCount = count($lines)) < $line) {
                 return '';
             }
@@ -290,7 +336,6 @@ class ErrorHandler extends \yii\base\ErrorHandler
             $begin = $line - $half > 0 ? $line - $half : 0;
             $end = $line + $half < $lineCount ? $line + $half : $lineCount - 1;
         }
-
         return $this->renderFile($this->callStackItemView, [
             'file' => $file,
             'line' => $line,
@@ -309,6 +354,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * @param \Exception|\ParseError $exception exception to get call stack from
      * @return string HTML content of the rendered call stack.
      * @since 2.0.12
+     * 栈信息的格式化展示
      */
     public function renderCallStack($exception)
     {
@@ -351,6 +397,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * Determines whether given name of the file belongs to the framework.
      * @param string $file name to be checked.
      * @return bool whether given name of the file belongs to the framework.
+     * 是否是yii框架的文件
      */
     public function isCoreFile($file)
     {
@@ -362,6 +409,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * @param int $statusCode to be used to generate information link.
      * @param string $statusDescription Description to display after the the status code.
      * @return string generated HTML with HTTP status code information.
+     * http_exception 链接
      */
     public function createHttpStatusLink($statusCode, $statusDescription)
     {
@@ -372,6 +420,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * Creates string containing HTML link which refers to the home page of determined web-server software
      * and its full name.
      * @return string server software information hyperlink.
+     * web服务器的信息
      */
     public function createServerInformationLink()
     {
@@ -411,6 +460,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      *
      * @param array $args arguments array to be converted
      * @return string string representation of the arguments array
+     * 格式化栈的参数
      */
     public function argumentsToString($args)
     {
@@ -464,6 +514,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * Returns human-readable exception name
      * @param \Exception $exception
      * @return string human-readable exception name or null if it cannot be determined
+     * 用于view里面 显示异常名称
      */
     public function getExceptionName($exception)
     {
