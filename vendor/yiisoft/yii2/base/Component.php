@@ -101,13 +101,30 @@ class Component extends Object
 {
     /**
      * @var array the attached event handlers (event name => handlers)
+     * 同名的事件value是数组
+     * 事件可以是一个流程中相对独立的子流程 可以通过event对象返回子流程的执行状态
+     * 这里保存的是实例级别的事件 通过组件设置的事件 直接通过Event::on设置的是类级别
+     * array(
+     *  '事件名1'=>array(0=>array('回调函数','参数'), 1=>array('回调函数','参数'))
+     *  '事件名2'=>array(0=>array('回调函数','参数'), 1=>array('回调函数','参数'))
      */
     private $_events = [];
     /**
      * @var Behavior[]|null the attached behaviors (behavior name => behavior). This is `null` when not initialized.
+     *      'as myBehavior2' => MyBehavior::className(), 配置文件
+     *      attachBehaviors(array())函数
+     * 保留的是 behavior实例
+     * $behavior->attach($this); 添加事件
+     * behaviors里面包含多个events 分别把这些events注册到当前组件里 靠着事件的trigger来触发
+     * 这些events必须是组件事先定义好的
+     * behaviors的注入没有一个统一的注入点 只是通过各个魔术函数调用的时候进行处理
+     * 一般di在创建组件的时候回调用object对象的__controller函数进行属性赋值时 可能会调用__set函数
      */
     private $_behaviors;
 
+    /*
+     * 事件可以在代码中通过on函数动态添加,也可以通过在配置文件中配置在组件中以on开头 后面是事件名称'on add' => function ($event) { ... }
+     */
 
     /**
      * Returns the value of a component property.
@@ -133,6 +150,7 @@ class Component extends Object
         }
 
         // behavior property
+        //可以拿到behaviors的属性值
         $this->ensureBehaviors();
         foreach ($this->_behaviors as $behavior) {
             if ($behavior->canGetProperty($name)) {
@@ -186,6 +204,7 @@ class Component extends Object
         }
 
         // behavior property
+        //设置behaviors对象的属性
         $this->ensureBehaviors();
         foreach ($this->_behaviors as $behavior) {
             if ($behavior->canSetProperty($name)) {
@@ -477,13 +496,17 @@ class Component extends Object
      * handler list. If false, the new handler will be inserted at the beginning of the existing
      * handler list.
      * @see off()
+     * 设置事件
      */
     public function on($name, $handler, $data = null, $append = true)
     {
+        //加载行为
         $this->ensureBehaviors();
+        //放在尾部
         if ($append || empty($this->_events[$name])) {
             $this->_events[$name][] = [$handler, $data];
         } else {
+            //放在头部
             array_unshift($this->_events[$name], [$handler, $data]);
         }
     }
@@ -496,6 +519,7 @@ class Component extends Object
      * If it is null, all handlers attached to the named event will be removed.
      * @return bool if a handler is found and detached
      * @see on()
+     * 根据事件名称删除事件
      */
     public function off($name, $handler = null)
     {
@@ -503,11 +527,12 @@ class Component extends Object
         if (empty($this->_events[$name])) {
             return false;
         }
+        //删除所有$name的事件
         if ($handler === null) {
             unset($this->_events[$name]);
             return true;
         }
-
+        //删除name下的handler 同一个name下可以有多个handler
         $removed = false;
         foreach ($this->_events[$name] as $i => $event) {
             if ($event[0] === $handler) {
@@ -515,6 +540,7 @@ class Component extends Object
                 $removed = true;
             }
         }
+        //重新生成数组下标
         if ($removed) {
             $this->_events[$name] = array_values($this->_events[$name]);
         }
@@ -527,6 +553,8 @@ class Component extends Object
      * all attached handlers for the event including class-level handlers.
      * @param string $name the event name
      * @param Event $event the event parameter. If not set, a default [[Event]] object will be created.
+     * 触发事件
+     * event可以用来传递一些数据
      */
     public function trigger($name, Event $event = null)
     {
@@ -542,7 +570,7 @@ class Component extends Object
             $event->name = $name;
             foreach ($this->_events[$name] as $handler) {
                 $event->data = $handler[1];
-                call_user_func($handler[0], $event);
+                call_user_func($handler[0], $event); //这里进行回调 所有同名事件的回调函数都会传入同名的event对象
                 // stop further handling if the event is handled
                 if ($event->handled) {
                     return;
@@ -550,6 +578,7 @@ class Component extends Object
             }
         }
         // invoke class-level attached handlers
+        //触发类级别事件
         Event::trigger($this, $name, $event);
     }
 
@@ -642,6 +671,7 @@ class Component extends Object
 
     /**
      * Makes sure that the behaviors declared in [[behaviors()]] are attached to this component.
+     * 加载对象中behaviors()方法中的行为
      */
     public function ensureBehaviors()
     {
@@ -660,9 +690,29 @@ class Component extends Object
      * will be detached first.
      * @param string|array|Behavior $behavior the behavior to be attached
      * @return Behavior the attached behavior.
+     * 匿名行为，只有行为类名
+     * MyBehavior::className(),
+     *
+     * 命名行为，只有行为类名
+     *'myBehavior2' => MyBehavior::className(),
+     *
+     * 匿名行为，配置数组
+     *[
+     *'class' => MyBehavior::className(),
+     *'prop1' => 'value1',
+     *'prop2' => 'value2',
+     *],
+     *
+     * 命名行为，配置数组
+     * 'myBehavior4' => [
+     * 'class' => MyBehavior::className(),
+     * 'prop1' => 'value1',
+     * 'prop2' => 'value2',
+     * ]
      */
     private function attachBehaviorInternal($name, $behavior)
     {
+        // 不是Behavior实例 创建$behavior实例
         if (!($behavior instanceof Behavior)) {
             $behavior = Yii::createObject($behavior);
         }

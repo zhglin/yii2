@@ -24,6 +24,7 @@ class Behavior extends Object
 {
     /**
      * @var Component|null the owner of this behavior
+     * 触发添加行为的 组件实例
      */
     public $owner;
 
@@ -55,6 +56,9 @@ class Behavior extends Object
      * ```
      *
      * @return array events (array keys) and the corresponding event handler methods (array values).
+     * 这里面是保存的需要触发的事件
+     * 事件名 => 回调函数
+     * 如果回调函数是个字符串 回调函数为[$this, 'handleClick'];
      */
     public function events()
     {
@@ -67,6 +71,7 @@ class Behavior extends Object
      * and attach event handlers as declared in [[events]].
      * Make sure you call the parent implementation if you override this method.
      * @param Component $owner the component that this behavior is to be attached to.
+     * 其实添加的就是实例级别的事件
      */
     public function attach($owner)
     {
@@ -81,6 +86,7 @@ class Behavior extends Object
      * The default implementation will unset the [[owner]] property
      * and detach event handlers declared in [[events]].
      * Make sure you call the parent implementation if you override this method.
+     * 删除行为
      */
     public function detach()
     {

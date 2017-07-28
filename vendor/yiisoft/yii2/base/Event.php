@@ -29,6 +29,7 @@ class Event extends Object
     /**
      * @var string the event name. This property is set by [[Component::trigger()]] and [[trigger()]].
      * Event handlers may use this property to check what event it is handling.
+     * 事件名称
      */
     public $name;
     /**
@@ -36,22 +37,38 @@ class Event extends Object
      * set as the object whose `trigger()` method is called.
      * This property may also be a `null` when this event is a
      * class-level event which is triggered in a static context.
+     * 谁发起的事件
      */
     public $sender;
     /**
      * @var bool whether the event is handled. Defaults to `false`.
      * When a handler sets this to be `true`, the event processing will stop and
      * ignore the rest of the uninvoked event handlers.
+     * 同名的事件会保留成数组
+     * 这个参数用来控制下一个同名事件是否执行
      */
     public $handled = false;
     /**
      * @var mixed the data that is passed to [[Component::on()]] when attaching an event handler.
      * Note that this varies according to which event handler is currently executing.
+     * 可以用来传递参数
      */
     public $data;
 
     /**
      * @var array contains all globally registered event handlers.
+     * 保存的是类级别的事件
+     * array(
+     *  '事件名' => array(
+     *              '类名1' => array(0=>array('回调函数','参数),1=>array('回调函数','参数))
+     *              '类名2' => array(0=>array('回调函数','参数),1=>array('回调函数','参数))
+     *              )
+     *  '事件名' => array(
+     *              '类名1' => array(0=>array('回调函数','参数),1=>array('回调函数','参数))
+     *              '类名2' => array(0=>array('回调函数','参数),1=>array('回调函数','参数))
+     *              )
+     * )
+     * 根据事件名key value是数组
      */
     private static $_events = [];
 
@@ -84,6 +101,8 @@ class Event extends Object
      * handler list. If `false`, the new handler will be inserted at the beginning of the existing
      * handler list.
      * @see off()
+     * 添加事件
+     *  $class 需要带命名空间 get_called_class
      */
     public static function on($class, $name, $handler, $data = null, $append = true)
     {
@@ -106,6 +125,7 @@ class Event extends Object
      * If it is `null`, all handlers attached to the named event will be removed.
      * @return bool whether a handler is found and detached.
      * @see on()
+     * 删除事件
      */
     public static function off($class, $name, $handler = null)
     {
@@ -136,6 +156,7 @@ class Event extends Object
      * @see on()
      * @see off()
      * @since 2.0.10
+     * 删掉全部的类事件
      */
     public static function offAll()
     {
@@ -183,6 +204,12 @@ class Event extends Object
      * @param string|object $class the object or the fully qualified class name specifying the class-level event.
      * @param string $name the event name.
      * @param Event $event the event parameter. If not set, a default [[Event]] object will be created.
+     * 触发事件  会把父对象的事件一起触发
+     * interface test{}
+     * class foo implements test { }
+     * class bar extends foo {}
+     * print_r(class_parents('bar'));       Array([foo] => foo)
+     * print_r(class_implements('bar'));    Array([test] => test)
      */
     public static function trigger($class, $name, $event = null)
     {

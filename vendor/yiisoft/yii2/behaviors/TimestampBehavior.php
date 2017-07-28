@@ -74,11 +74,13 @@ class TimestampBehavior extends AttributeBehavior
     /**
      * @var string the attribute that will receive timestamp value
      * Set this property to false if you do not want to record the creation time.
+     * 表中的创建时间字段名
      */
     public $createdAtAttribute = 'created_at';
     /**
      * @var string the attribute that will receive timestamp value.
      * Set this property to false if you do not want to record the update time.
+     * 表中的修改时间字段名
      */
     public $updatedAtAttribute = 'updated_at';
     /**
@@ -86,6 +88,7 @@ class TimestampBehavior extends AttributeBehavior
      *
      * In case, when the value is `null`, the result of the PHP function [time()](http://php.net/manual/en/function.time.php)
      * will be used as value.
+     * 可以是回调函数 来获取值
      */
     public $value;
 

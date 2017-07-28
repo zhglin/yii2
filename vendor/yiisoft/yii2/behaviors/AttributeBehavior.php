@@ -62,6 +62,7 @@ class AttributeBehavior extends Behavior
      *     ActiveRecord::EVENT_BEFORE_UPDATE => 'attribute2',
      * ]
      * ```
+     * ActiveRecord事件中需要处理的字段
      */
     public $attributes = [];
     /**
@@ -94,13 +95,15 @@ class AttributeBehavior extends Behavior
     {
         return array_fill_keys(
             array_keys($this->attributes),
-            'evaluateAttributes'
+            'evaluateAttributes' //回调函数
         );
     }
 
     /**
      * Evaluates the attribute value and assigns it to the current attributes.
      * @param Event $event
+     * ModelEvent
+     * BaseActiveRecord.php
      */
     public function evaluateAttributes($event)
     {
