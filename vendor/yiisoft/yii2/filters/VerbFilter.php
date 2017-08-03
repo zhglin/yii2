@@ -70,6 +70,11 @@ class VerbFilter extends Behavior
      */
     public $actions = [];
 
+    /*
+     * http method限制
+     *
+     */
+
 
     /**
      * Declares event handlers for the [[owner]]'s events.

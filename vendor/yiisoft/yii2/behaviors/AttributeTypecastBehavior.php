@@ -176,6 +176,9 @@ class AttributeTypecastBehavior extends Behavior
      */
     private static $autoDetectedAttributeTypes = [];
 
+    /*
+     * 类型转换
+     */
 
     /**
      * Clears internal static cache of auto detected [[attributeTypes]] values

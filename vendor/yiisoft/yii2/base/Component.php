@@ -111,11 +111,14 @@ class Component extends Object
     private $_events = [];
     /**
      * @var Behavior[]|null the attached behaviors (behavior name => behavior). This is `null` when not initialized.
-     *      'as myBehavior2' => MyBehavior::className(), 配置文件
-     *      attachBehaviors(array())函数
+ *      'as myBehavior2' => MyBehavior::className(), 配置文件
+ *       attachBehaviors(array())函数
      * 保留的是 behavior实例
      * $behavior->attach($this); 添加事件
-     * behaviors里面包含多个events 分别把这些events注册到当前组件里 靠着事件的trigger来触发
+     *
+     * behaviors就是多个events的集合 需要这些events配合才能完成整个流程 比如before after配套 或者业务比较复杂
+     * 调用behaviors实例中的attach方法进行events的注册 在具体的behavior中可以进行重写该方法
+     * 靠着事件的trigger来触发
      * 这些events必须是组件事先定义好的
      * behaviors的注入没有一个统一的注入点 只是通过各个魔术函数调用的时候进行处理
      * 一般di在创建组件的时候回调用object对象的__controller函数进行属性赋值时 可能会调用__set函数

@@ -57,6 +57,7 @@ class HttpCache extends ActionFilter
      * `$params` takes the value of [[params]]. The callback should return a UNIX timestamp.
      *
      * @see http://tools.ietf.org/html/rfc7232#section-2.2
+     * 基于时间戳
      */
     public $lastModified;
     /**
@@ -83,6 +84,7 @@ class HttpCache extends ActionFilter
     public $weakEtag = false;
     /**
      * @var mixed additional parameters that should be passed to the [[lastModified]] and [[etagSeed]] callbacks.
+     * 对回调函数传的参数
      */
     public $params;
     /**
@@ -106,6 +108,11 @@ class HttpCache extends ActionFilter
      */
     public $enabled = true;
 
+    /*
+     * 客户端缓存
+     * 只对 get Head的method进行处理
+     * 前后端自己通过http报头进行缓存处理
+     */
 
     /**
      * This method is invoked right before an action is to be executed (after all possible filters.)
@@ -119,6 +126,7 @@ class HttpCache extends ActionFilter
             return true;
         }
 
+        //验证条件
         $verb = Yii::$app->getRequest()->getMethod();
         if ($verb !== 'GET' && $verb !== 'HEAD' || $this->lastModified === null && $this->etagSeed === null) {
             return true;

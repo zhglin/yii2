@@ -106,6 +106,7 @@ class Application extends \yii\base\Application
             if ($result instanceof Response) {
                 return $result;
             } else {
+                //页面缓存时 $result的返回值为null
                 $response = $this->getResponse();
                 if ($result !== null) {
                     $response->data = $result;

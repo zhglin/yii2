@@ -19,6 +19,7 @@ class ActionEvent extends Event
 {
     /**
      * @var Action the action currently being executed
+     * action对象实例
      */
     public $action;
     /**

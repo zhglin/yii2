@@ -57,6 +57,7 @@ class Widget extends Component implements ViewContextInterface
      * @var Widget[] the widgets that are currently being rendered (not ended). This property
      * is maintained by [[begin()]] and [[end()]] methods.
      * @internal
+     * 这里是多个需要片段缓存的实例
      */
     public static $stack = [];
 
@@ -81,6 +82,7 @@ class Widget extends Component implements ViewContextInterface
      * @param array $config name-value pairs that will be used to initialize the object properties
      * @return static the newly created widget instance
      * @see end()
+     * 开始片段缓存
      */
     public static function begin($config = [])
     {
@@ -98,6 +100,7 @@ class Widget extends Component implements ViewContextInterface
      * @return static the widget instance that is ended.
      * @throws InvalidCallException if [[begin()]] and [[end()]] calls are not properly nested
      * @see begin()
+     * 结束片段缓存
      */
     public static function end()
     {
@@ -150,6 +153,7 @@ class Widget extends Component implements ViewContextInterface
         return ob_get_clean() . $out;
     }
 
+    //片段缓存id
     private $_id;
 
     /**
@@ -169,6 +173,7 @@ class Widget extends Component implements ViewContextInterface
     /**
      * Sets the ID of the widget.
      * @param string $value id of the widget.
+     * 片段缓存id
      */
     public function setId($value)
     {
