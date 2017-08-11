@@ -225,6 +225,9 @@ class Session extends Component implements \IteratorAggregate, \ArrayAccess, \Co
      * If you send session ID via other ways, you may need to override this method
      * or call [[setHasSessionId()]] to explicitly set whether the session ID is sent.
      * @return bool whether the current request has sent the session ID.
+     * session.use_cookies 使用cookies保存session id
+     * session.use_only_cookies 仅仅使用cookies保存session id 不能通过url传递
+     * session.use_trans_sid    url传递
      */
     public function getHasSessionId()
     {

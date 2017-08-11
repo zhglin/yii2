@@ -66,17 +66,20 @@ class User extends Component
 
     /**
      * @var string the class name of the [[identity]] object.
+     * 要指定user的实体对象类名
      */
     public $identityClass;
     /**
      * @var bool whether to enable cookie-based login. Defaults to `false`.
      * Note that this property will be ignored if [[enableSession]] is `false`.
+     * 使用登录
      */
     public $enableAutoLogin = false;
     /**
      * @var bool whether to use session to persist authentication status across multiple requests.
      * You set this property to be `false` if your application is stateless, which is often the case
      * for RESTful APIs.
+     * 是否基于seesion的登录
      */
     public $enableSession = true;
     /**
@@ -95,6 +98,7 @@ class User extends Component
     /**
      * @var array the configuration of the identity cookie. This property is used only when [[enableAutoLogin]] is `true`.
      * @see Cookie
+     * 如果基于cookie的登录 设置cookie的信息
      */
     public $identityCookie = ['name' => '_identity', 'httpOnly' => true];
     /**
@@ -102,6 +106,7 @@ class User extends Component
      * remains inactive. If this property is not set, the user will be logged out after
      * the current session expires (c.f. [[Session::timeout]]).
      * Note that this will not work if [[enableAutoLogin]] is `true`.
+     * session过期时间 如果没有过期 过期时间会累加
      */
     public $authTimeout;
     /**
@@ -127,16 +132,19 @@ class User extends Component
     public $autoRenewCookie = true;
     /**
      * @var string the session variable name used to store the value of [[id]].
+     * session 保存identity的id字段名
      */
     public $idParam = '__id';
     /**
      * @var string the session variable name used to store the value of expiration timestamp of the authenticated state.
      * This is used when [[authTimeout]] is set.
+     * session过期时间 字段名
      */
     public $authTimeoutParam = '__expire';
     /**
      * @var string the session variable name used to store the value of absolute expiration timestamp of the authenticated state.
      * This is used when [[absoluteAuthTimeout]] is set.
+     * 绝对过期时间
      */
     public $absoluteAuthTimeoutParam = '__absoluteExpire';
     /**
@@ -151,6 +159,12 @@ class User extends Component
 
     private $_access = [];
 
+    /*
+     * 需要user实体对象
+     * enableAutoLogin 始终都处于登录状态 使用cookie中的信息登录 sesion过期也依然可以使用cookie中的信息获取实体信息
+     * 基于密码的登录 这里不处理验证  只维护登录状态 获取用户实体
+     * getIdentity 获取实体的 时候更新session 以及使用cookie进行登录
+     */
 
     /**
      * Initializes the application component.
@@ -162,11 +176,13 @@ class User extends Component
         if ($this->identityClass === null) {
             throw new InvalidConfigException('User::identityClass must be set.');
         }
+
         if ($this->enableAutoLogin && !isset($this->identityCookie['name'])) {
             throw new InvalidConfigException('User::identityCookie must contain the "name" element.');
         }
     }
 
+    //user实体对象  实现IdentityInterface接口
     private $_identity = false;
 
     /**
@@ -185,7 +201,7 @@ class User extends Component
         if ($this->_identity === false) {
             if ($this->enableSession && $autoRenew) {
                 $this->_identity = null;
-                $this->renewAuthStatus();
+                $this->renewAuthStatus(); //调用setIdentity设置_identity
             } else {
                 return null;
             }
@@ -234,6 +250,7 @@ class User extends Component
      * @param IdentityInterface $identity the user identity (which should already be authenticated)
      * @param int $duration number of seconds that the user can remain in logged-in status, defaults to `0`
      * @return bool whether the user is logged in
+     * $duration过期时间
      */
     public function login(IdentityInterface $identity, $duration = 0)
     {
@@ -281,6 +298,7 @@ class User extends Component
      *
      * This method attempts to log in a user using the ID and authKey information
      * provided by the [[identityCookie|identity cookie]].
+     * session过期才会调用
      */
     protected function loginByCookie()
     {
@@ -549,6 +567,7 @@ class User extends Component
      * @return array|null Returns an array of 'identity' and 'duration' if valid, otherwise null.
      * @see loginByCookie()
      * @since 2.0.9
+     * 基于cookie的登录 验证cookie中的$authKey
      */
     protected function getIdentityAndDurationFromCookie()
     {
@@ -599,16 +618,20 @@ class User extends Component
      * If null, it means switching the current user to be a guest.
      * @param int $duration number of seconds that the user can remain in logged-in status.
      * This parameter is used only when `$identity` is not null.
+     * 登录 退出 切换用户
+     * 删除当前的cookie session 重新写入
      */
     public function switchIdentity($identity, $duration = 0)
     {
         $this->setIdentity($identity);
 
+        //未开启session验证 跳过cookie
         if (!$this->enableSession) {
             return;
         }
 
         /* Ensure any existing identity cookies are removed. */
+        //开启cookie登录
         if ($this->enableAutoLogin) {
             $this->removeIdentityCookie();
         }
@@ -643,6 +666,7 @@ class User extends Component
      *
      * If the user identity cannot be determined by session, this method will try to [[loginByCookie()|login by cookie]]
      * if [[enableAutoLogin]] is true.
+     * 只有开启了session 才会进行更新状态
      */
     protected function renewAuthStatus()
     {
@@ -659,6 +683,9 @@ class User extends Component
 
         $this->setIdentity($identity);
 
+        /*
+         * authTimeout  absoluteAuthTimeout有一个过期就退出登录
+         */
         if ($identity !== null && ($this->authTimeout !== null || $this->absoluteAuthTimeout !== null)) {
             $expire = $this->authTimeout !== null ? $session->get($this->authTimeoutParam) : null;
             $expireAbsolute = $this->absoluteAuthTimeout !== null ? $session->get($this->absoluteAuthTimeoutParam) : null;
