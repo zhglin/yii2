@@ -92,6 +92,11 @@ class Cors extends ActionFilter
     ];
 
 
+    /*
+     * HTTP访问控制
+     * https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Access_control_CORS
+     */
+
     /**
      * @inheritdoc
      */

@@ -90,12 +90,18 @@ class View extends Component
      * @var array a list of currently active fragment cache widgets. This property
      * is used internally to implement the content caching feature. Do not modify it directly.
      * @internal
+     * 页面缓存以及片段缓存实例
+     * 不管是页面缓存还是片段缓存的实例都放在cacheStack
+     * 把每个动态内容都加到相应缓存的dynamicPlaceholders中
+     * 需要生成缓存的时候才会放进去
      */
     public $cacheStack = [];
     /**
      * @var array a list of placeholders for embedding dynamic contents. This property
      * is used internally to implement the content caching feature. Do not modify it directly.
      * @internal
+     * 保留所有的动态内容
+     *  return eval($statements); 就是能够通过eval执行的php代码
      */
     public $dynamicPlaceholders = [];
 
@@ -355,15 +361,18 @@ class View extends Component
      * @param string $statements the PHP statements for generating the dynamic content.
      * @return string the placeholder of the dynamic content, or the dynamic content if there is no
      * active content cache currently.
+     * 页面缓存中的动态内容
+     *  echo $this->renderDynamic('return Yii::$app->user->identity->name;'); 占位符
+     * 如果页面没有相应的缓存实例就直接执行动态内容 获取结果
      */
     public function renderDynamic($statements)
     {
         if (!empty($this->cacheStack)) {
             $n = count($this->dynamicPlaceholders);
             $placeholder = "<![CDATA[YII-DYNAMIC-$n]]>";
-            $this->addDynamicPlaceholder($placeholder, $statements);
+            $this->addDynamicPlaceholder($placeholder, $statements); //添加到各个缓存对象的dynamicPlaceholders中
 
-            return $placeholder;
+            return $placeholder; //返回动态内容的标记 占位符用于替换
         }
         return $this->evaluateDynamicContent($statements);
     }
@@ -377,7 +386,7 @@ class View extends Component
     public function addDynamicPlaceholder($placeholder, $statements)
     {
         foreach ($this->cacheStack as $cache) {
-            $cache->dynamicPlaceholders[$placeholder] = $statements;
+            $cache->dynamicPlaceholders[$placeholder] = $statements; //dynamicPlaceholders是个public的属性
         }
         $this->dynamicPlaceholders[$placeholder] = $statements;
     }
@@ -387,6 +396,7 @@ class View extends Component
      * This method is mainly used internally to implement dynamic content feature.
      * @param string $statements the PHP statements to be evaluated.
      * @return mixed the return value of the PHP statements.
+     * 执行动态内容
      */
     public function evaluateDynamicContent($statements)
     {
@@ -470,15 +480,16 @@ class View extends Component
      * @param array $properties initial property values for [[FragmentCache]]
      * @return bool whether you should generate the content for caching.
      * False if the cached version is available.
+     * 片段缓存
      */
     public function beginCache($id, $properties = [])
     {
         $properties['id'] = $id;
         $properties['view'] = $this;
         /* @var $cache FragmentCache */
-        $cache = FragmentCache::begin($properties);
-        if ($cache->getCachedContent() !== false) {
-            $this->endCache();
+        $cache = FragmentCache::begin($properties); //创建缓存对象
+        if ($cache->getCachedContent() !== false) { //这里只是获取缓存 并没有 echo给页面
+            $this->endCache(); //这里处理 缓存的动态内容 并且echo 给页面 并进行缓存的添加
 
             return false;
         }

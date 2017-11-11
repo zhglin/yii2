@@ -59,6 +59,7 @@ class AccessRule extends Component
      *
      * If this property is not set or empty, it means this rule applies to all roles.
      * @see $roleParams
+     * 基于角色的权限验证
      */
     public $roles;
     /**
@@ -202,11 +203,11 @@ class AccessRule extends Component
             throw new InvalidConfigException('The user application component must be available to specify roles in AccessRule.');
         }
         foreach ($this->roles as $role) {
-            if ($role === '?') {
+            if ($role === '?') { //需要登录
                 if ($user->getIsGuest()) {
                     return true;
                 }
-            } elseif ($role === '@') {
+            } elseif ($role === '@') { //不需要登录
                 if (!$user->getIsGuest()) {
                     return true;
                 }

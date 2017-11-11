@@ -61,6 +61,11 @@ class RateLimiter extends ActionFilter
      */
     public $response;
 
+    /*
+     * 这个流控只支持针对用户的 如果用户没有登录是不进行处理的
+     * user对象必须继承自RateLimitInterface
+     * 如果超出限制throw TooManyRequestsHttpException
+     */
 
     /**
      * @inheritdoc

@@ -87,6 +87,9 @@ class AttributeBehavior extends Behavior
      */
     public $skipUpdateOnClean = true;
 
+    /*
+     * 与ActiveRecord事件相关的behavior 可以用来修改attribute的值
+     */
 
     /**
      * @inheritdoc

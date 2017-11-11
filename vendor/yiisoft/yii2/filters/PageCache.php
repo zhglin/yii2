@@ -54,6 +54,7 @@ class PageCache extends ActionFilter
     /**
      * @var bool whether the content being cached should be differentiated according to the route.
      * A route consists of the requested controller ID and action ID. Defaults to `true`.
+     * 是否使用route作为缓存key
      */
     public $varyByRoute = true;
     /**
@@ -98,16 +99,19 @@ class PageCache extends ActionFilter
      *     Yii::$app->language,
      * ]
      * ```
+     * 参与构建缓存的key
      */
     public $variations;
     /**
      * @var bool whether to enable the page cache. You may use this property to turn on and off
      * the page cache according to specific setting (e.g. enable page cache only for GET requests).
+     * 是否开启
      */
     public $enabled = true;
     /**
      * @var \yii\base\View the view component to use for caching. If not set, the default application view component
      * [[\yii\web\Application::view]] will be used.
+     * view实例
      */
     public $view;
     /**
@@ -115,6 +119,7 @@ class PageCache extends ActionFilter
      * cookie names indicating which cookies can be cached. Be very careful with caching cookies, because
      * it may leak sensitive or private data stored in cookies to unwanted users.
      * @since 2.0.4
+     * 是否缓存cookies
      */
     public $cacheCookies = false;
     /**
@@ -140,9 +145,14 @@ class PageCache extends ActionFilter
     {
         parent::init();
         if ($this->view === null) {
-            $this->view = Yii::$app->getView();
+            $this->view = Yii::$app->getView(); //view对象是个单例
         }
     }
+
+    /*
+     * 在beforeAction事件中如果获取缓存内容成功就根据获取的内容对$response对象进行处理
+     * 否则注册Response::EVENT_AFTER_SEND事件,在Response::EVENT_AFTER_SEND中进行缓存
+     */
 
     /**
      * This method is invoked right before an action is to be executed (after all possible filters.)
@@ -156,14 +166,17 @@ class PageCache extends ActionFilter
             return true;
         }
 
+        //获取缓存实例
         $this->cache = Instance::ensure($this->cache, Cache::className());
 
+        //获取缓存依赖
         if (is_array($this->dependency)) {
             $this->dependency = Yii::createObject($this->dependency);
         }
 
         $response = Yii::$app->getResponse();
-        $data = $this->cache->get($this->calculateCacheKey());
+        $data = $this->cache->get($this->calculateCacheKey()); //获取缓存
+        //如果获取不到就把缓存实例放到cacheStack中 注册Response::EVENT_AFTER_SEND实践
         if (!is_array($data) || !isset($data['cacheVersion']) || $data['cacheVersion'] !== 1) {
             $this->view->cacheStack[] = $this;
             ob_start();
@@ -184,6 +197,7 @@ class PageCache extends ActionFilter
      * in a cache entry by returning an array instead of `true`.
      * @return bool|array whether to cache or not, return an array instead of `true` to store an additional data.
      * @since 2.0.11
+     * 可以被重写 返回false不进行缓存
      */
     public function beforeCacheResponse()
     {
@@ -221,6 +235,7 @@ class PageCache extends ActionFilter
                 // outermost cache: replace placeholder with dynamic content
                 $response->content = $this->updateDynamicContent($response->content, $data['dynamicPlaceholders']);
             }
+            //还有比页面缓存更高层的缓存?
             foreach ($data['dynamicPlaceholders'] as $name => $statements) {
                 $this->view->addDynamicPlaceholder($name, $statements);
             }
@@ -231,13 +246,16 @@ class PageCache extends ActionFilter
     /**
      * Caches response properties.
      * @since 2.0.3
+     * 对页面内容进行缓存
      */
     public function cacheResponse()
     {
         array_pop($this->view->cacheStack);
         $beforeCacheResponseResult = $this->beforeCacheResponse();
+        //没有进行缓存
         if ($beforeCacheResponseResult === false) {
             $content = ob_get_clean();
+            //替换动态内容
             if (empty($this->view->cacheStack) && !empty($this->dynamicPlaceholders)) {
                 $content = $this->updateDynamicContent($content, $this->dynamicPlaceholders);
             }
@@ -262,6 +280,7 @@ class PageCache extends ActionFilter
         $this->insertResponseCollectionIntoData($response, 'headers', $data);
         $this->insertResponseCollectionIntoData($response, 'cookies', $data);
         $this->cache->set($this->calculateCacheKey(), $data, $this->duration, $this->dependency);
+        //方法开头已经删掉了cacheStack
         if (empty($this->view->cacheStack) && !empty($this->dynamicPlaceholders)) {
             $data['content'] = $this->updateDynamicContent($data['content'], $this->dynamicPlaceholders);
         }
@@ -273,6 +292,7 @@ class PageCache extends ActionFilter
      * @param Response $response the response.
      * @param string $collectionName currently it's `headers` or `cookies`.
      * @param array $data the cache data.
+     * 缓存response中的cookies headers
      */
     private function insertResponseCollectionIntoData(Response $response, $collectionName, array &$data)
     {
@@ -281,6 +301,11 @@ class PageCache extends ActionFilter
             return;
         }
 
+        /*
+         * cacheCookies
+         * cacheHeaders
+         * 如果是数组 可以有选择进行缓存
+         */
         $all = $response->{$collectionName}->toArray();
         if (is_array($this->{$property})) {
             $filtered = [];
@@ -303,6 +328,7 @@ class PageCache extends ActionFilter
      * @param array $placeholders placeholders and their values.
      * @return string final content.
      * @since 2.0.11
+     * 更新动态内容
      */
     protected function updateDynamicContent($content, $placeholders)
     {
@@ -316,6 +342,7 @@ class PageCache extends ActionFilter
     /**
      * @return array the key used to cache response properties.
      * @since 2.0.3
+     * 生成缓存key
      */
     protected function calculateCacheKey()
     {

@@ -114,6 +114,10 @@ class HostControl extends ActionFilter
      */
     public $fallbackHostInfo = '';
 
+    /*
+     * 基于host的访问控制
+     */
+
 
     /**
      * @inheritdoc
@@ -128,12 +132,14 @@ class HostControl extends ActionFilter
             return true;
         }
 
+        //Traversable 可被遍历的接口
         if (!is_array($allowedHosts) && !$allowedHosts instanceof \Traversable) {
             $allowedHosts = (array)$allowedHosts;
         }
 
         $currentHost = Yii::$app->getRequest()->getHostName();
 
+        //通过
         foreach ($allowedHosts as $allowedHost) {
             if (fnmatch($allowedHost, $currentHost)) {
                 return true;

@@ -137,6 +137,7 @@ class CookieCollection extends Object implements \IteratorAggregate, \ArrayAcces
      * @param Cookie|string $cookie the cookie object or the name of the cookie to be removed.
      * @param bool $removeFromBrowser whether to remove the cookie from browser
      * @throws InvalidCallException if the cookie collection is read only
+     * $removeFromBrowser 从浏览器中删除 设置过期时间为1
      */
     public function remove($cookie, $removeFromBrowser = true)
     {
