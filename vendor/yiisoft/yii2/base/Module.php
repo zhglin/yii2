@@ -102,6 +102,7 @@ class Module extends ServiceLocator
      *
      * See also the [guide section on autoloading](guide:concept-autoloading) to learn more about
      * defining namespaces and how classes are loaded.
+     * 当前module的命名空间
      */
     public $controllerNamespace;
     /**
@@ -127,7 +128,10 @@ class Module extends ServiceLocator
     private $_layoutPath;
     /**
      * @var array child modules of this module
-     * 子模块 模块中配置
+     * 当前模块中的模块配置 或者 实例  都是当前模块的子模块
+     * $config['modules']['zl'] = [
+     *      'class' => 'frontend\modules\zl\Modules',
+     * ];
      */
     private $_modules = [];
     /**
@@ -147,6 +151,18 @@ class Module extends ServiceLocator
      */
     private $_version;
 
+    /*
+     * 所有的代码都是运行在一个module中 Yii->app 是也是一个module 因为是从module中继承的
+     * application绕过了module的__construct函数 通过config文件为module的id进行赋值
+     * 此模块可以理解为初始模块 其他的模块都是在初始模块下的子模块 因为都是在初始模块下通过modules的配置加载出来的
+     * 只能在初始模块下运行
+     *
+     * 子模块必须有个Modules.php文件 继承自module.php 作为模块的启动文件 可以对其进行单独的module配置......
+     *
+     * 在getModule函数函数函数中 最终会调用module的__controller函数 为新创建的module的id属性以及module属性赋值
+     * 分别代表这新建module的id以及创建它的module实例（也就是其父module）。
+     * modules，module分别是保留当前模块的子模块，当前模块的父模块。用来保存模块之间的关系
+     */
 
     /**
      * Constructor.
@@ -177,6 +193,8 @@ class Module extends ServiceLocator
      * Sets the currently requested instance of this module class.
      * @param Module|null $instance the currently requested instance of this module class.
      * If it is `null`, the instance of the calling class will be removed, if any.
+     * 设置当前应用已经加载的模块 不存在父子关系
+     * 也可以从中删除掉
      */
     public static function setInstance($instance)
     {
@@ -210,6 +228,9 @@ class Module extends ServiceLocator
      * Returns an ID that uniquely identifies this module among all modules within the current application.
      * Note that if the module is an application, an empty string will be returned.
      * @return string the unique ID of the module.
+     * 获取当前模块的标示
+     * $this->module->getUniqueId() 递归的获取父模块的标示
+     * 应用的模块id/子模块/....../$id
      */
     public function getUniqueId()
     {
@@ -386,9 +407,11 @@ class Module extends ServiceLocator
      * @param string $id module ID. For grand child modules, use ID path relative to this module (e.g. `admin/content`).
      * @return bool whether the named module exists. Both loaded and unloaded modules
      * are considered.
+     * 制定的module是否存在
      */
     public function hasModule($id)
     {
+        //如果存在／ 说明有子模块 例如frontend／test  先找frontend再在frontend模块实例中找test frontend是test的父模块
         if (($pos = strpos($id, '/')) !== false) {
             // sub-module
             $module = $this->getModule(substr($id, 0, $pos));
@@ -406,9 +429,11 @@ class Module extends ServiceLocator
      * @param bool $load whether to load the module if it is not yet loaded.
      * @return Module|null the module instance, `null` if the module does not exist.
      * @see hasModule()
+     * 获取模块实例
      */
     public function getModule($id, $load = true)
     {
+        //父模块／子模块
         if (($pos = strpos($id, '/')) !== false) {
             // sub-module
             $module = $this->getModule(substr($id, 0, $pos));
@@ -420,7 +445,8 @@ class Module extends ServiceLocator
             if ($this->_modules[$id] instanceof Module) {
                 return $this->_modules[$id];
             } elseif ($load) {
-                Yii::trace("Loading module: $id", __METHOD__);
+                //Yii::trace("Loading module: $id", __METHOD__);
+                //[id,$this] 是module的 构造函数中的参数 分别是id，module的属性值
                 /* @var $module Module */
                 $module = Yii::createObject($this->_modules[$id], [$id, $this]);
                 $module->setInstance($module);
@@ -441,6 +467,7 @@ class Module extends ServiceLocator
      * - a configuration array: when [[getModule()]] is called initially, the array
      *   will be used to instantiate the sub-module
      * - `null`: the named sub-module will be removed from this module
+     * 添加一个子模块
      */
     public function setModule($id, $module)
     {
@@ -457,6 +484,7 @@ class Module extends ServiceLocator
      * then all sub-modules registered in this module will be returned, whether they are loaded or not.
      * Loaded modules will be returned as objects, while unloaded modules as configuration arrays.
      * @return array the modules (indexed by their IDs).
+     * 获取当前模块的子模块
      */
     public function getModules($loadedOnly = false)
     {
@@ -496,6 +524,7 @@ class Module extends ServiceLocator
      * ```
      *
      * @param array $modules modules (id => module configuration or instances).
+     * 配置文件中的modules
      */
     public function setModules($modules)
     {

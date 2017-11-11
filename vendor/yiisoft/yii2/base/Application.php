@@ -58,18 +58,22 @@ abstract class Application extends Module
     const EVENT_AFTER_REQUEST = 'afterRequest';
     /**
      * Application state used by [[state]]: application just started.
+     * 创建了应用 解析参数之前的状态
      */
     const STATE_BEGIN = 0;
     /**
      * Application state used by [[state]]: application is initializing.
+     * 处理完config参数后的状态 没有run的状态
      */
     const STATE_INIT = 1;
     /**
      * Application state used by [[state]]: application is triggering [[EVENT_BEFORE_REQUEST]].
+     * 请求处理前
      */
     const STATE_BEFORE_REQUEST = 2;
     /**
      * Application state used by [[state]]: application is handling the request.
+     * 处理请求
      */
     const STATE_HANDLING_REQUEST = 3;
     /**
@@ -91,10 +95,12 @@ abstract class Application extends Module
      * The default namespace is `app\controllers`.
      *
      * Please refer to the [guide about class autoloading](guide:concept-autoloading.md) for more details.
+     * 当前模块的命名空间 可配置
      */
     public $controllerNamespace = 'app\\controllers';
     /**
      * @var string the application name.
+     * 当前应用的名字 可配置
      */
     public $name = 'My Application';
     /**
@@ -125,6 +131,7 @@ abstract class Application extends Module
     public $layout = 'main';
     /**
      * @var string the requested route
+     * controller/action
      */
     public $requestedRoute;
     /**
@@ -157,6 +164,7 @@ abstract class Application extends Module
      *
      * If not set explicitly in the application config, this property will be populated with the contents of
      * `@vendor/yiisoft/extensions.php`.
+     * 扩展的配置
      */
     public $extensions;
     /**
@@ -181,6 +189,7 @@ abstract class Application extends Module
     public $state;
     /**
      * @var array list of loaded modules indexed by their class names.
+     * 已加载的模块实例 模块名=>实例 不存在父子关系
      */
     public $loadedModules = [];
 
@@ -194,16 +203,16 @@ abstract class Application extends Module
     public function __construct($config = [])
     {
         Yii::$app = $this;
-        //把当前的模块保存到$loadedModules中
+        //把当前的模块保存到$loadedModules中 当前模块需要配置一个id
         static::setInstance($this);
         //设置应用开始的状态
         $this->state = self::STATE_BEGIN;
         //预先处理下配置文件
         $this->preInit($config);
 
-        //组册统一的错误处理 exception error
+        //统一的错误处理 exception error
         $this->registerErrorHandler($config);
-
+        //根据config 对应用的属性赋值 分散在不同的对象中 public属性直接赋值 private属性提供setXXX方法 通过__set函数赋值
         Component::__construct($config);
     }
 
@@ -273,6 +282,7 @@ abstract class Application extends Module
 
     /**
      * @inheritdoc
+     * Object对象 的__controller 赋值完属性时候 调用
      */
     public function init()
     {
@@ -284,9 +294,10 @@ abstract class Application extends Module
      * Initializes extensions and executes bootstrap components.
      * This method is called by [[init()]] after the application has been fully configured.
      * If you override this method, make sure you also call the parent implementation.
+     * 应用启动之前 先把需要先启动的组件或者模块 启动
      */
     protected function bootstrap()
-    {
+    {   //扩展的组件
         if ($this->extensions === null) {
             $file = Yii::getAlias('@vendor/yiisoft/extensions.php');
             $this->extensions = is_file($file) ? include($file) : [];
@@ -311,21 +322,25 @@ abstract class Application extends Module
         foreach ($this->bootstrap as $class) {
             $component = null;
             if (is_string($class)) {
-                if ($this->has($class)) {
+                if ($this->has($class)) { //在组件的配置中
                     $component = $this->get($class);
-                } elseif ($this->hasModule($class)) {
+                } elseif ($this->hasModule($class)) { //是个module
                     $component = $this->getModule($class);
                 } elseif (strpos($class, '\\') === false) {
                     throw new InvalidConfigException("Unknown bootstrapping component ID: $class");
                 }
             }
+
+            //数组
             if (!isset($component)) {
                 $component = Yii::createObject($class);
             }
 
+            //如果module的初始化与Yii->app相关 可以继承自BootstrapInterface 实现bootstrap函数
+            //否则直接使用init函数即可
             if ($component instanceof BootstrapInterface) {
                 Yii::trace('Bootstrap with ' . get_class($component) . '::bootstrap()', __METHOD__);
-                $component->bootstrap($this);
+                $component->bootstrap($this); //模块的初始化函数
             } else {
                 Yii::trace('Bootstrap with ' . get_class($component), __METHOD__);
             }
@@ -381,10 +396,12 @@ abstract class Application extends Module
     public function run()
     {
         try {
-
+            //处理请求之前的状态
             $this->state = self::STATE_BEFORE_REQUEST;
+            //请求处理前的事件处理
             $this->trigger(self::EVENT_BEFORE_REQUEST);
 
+            //开始处理请求
             $this->state = self::STATE_HANDLING_REQUEST;
             $response = $this->handleRequest($this->getRequest());
 

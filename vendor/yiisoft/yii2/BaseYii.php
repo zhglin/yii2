@@ -348,16 +348,16 @@ class BaseYii
         if (is_string($type)) {
             return static::$container->get($type, $params);
         }
-        //type是个数组 组件配置
+        //type是个数组 组件 或者 模块
         elseif (is_array($type) && isset($type['class'])) {
             $class = $type['class'];
             unset($type['class']);
             return static::$container->get($class, $params, $type);
         }
-        //回调函数 这两种方式都会返回true
+
         //is_callable('function () {echo "111";}',true) 匿名函数
         //is_callable(array('class','method'),true)
-        //true仅仅检查语法是否符合规范
+        //true仅仅检查语法是否符合规范 is_callable('aaa',true) 依然返回true
         elseif (is_callable($type, true)) {
             return static::$container->invoke($type, $params); //回调函数
         } elseif (is_array($type)) {

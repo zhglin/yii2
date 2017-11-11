@@ -67,10 +67,12 @@ class MultipartFormDataParser extends Object implements RequestParserInterface
 {
     /**
      * @var int upload file max size in bytes.
+     * 上传文件的大小
      */
     private $_uploadFileMaxSize;
     /**
      * @var int maximum upload files count.
+     * 上传文件的数量
      */
     private $_uploadFileMaxCount;
 
@@ -115,6 +117,16 @@ class MultipartFormDataParser extends Object implements RequestParserInterface
 
     /**
      * @inheritdoc
+     * Content-Type:multipart/form-data; boundary=------WebKitFormBoundaryOGkWPJsSaJCPWjZP
+     *
+     * ------WebKitFormBoundaryOGkWPJsSaJCPWjZP
+     * Content-Disposition: form-data; name="key2"
+     * 456
+     * ------WebKitFormBoundaryOGkWPJsSaJCPWjZP
+     * Content-Disposition: form-data; name="key1"
+     * 123
+     * ------WebKitFormBoundaryOGkWPJsSaJCPWjZP
+     * Content-Disposition: form-data; name="file"; filename="index.py"
      */
     public function parse($rawBody, $contentType)
     {
@@ -127,7 +139,7 @@ class MultipartFormDataParser extends Object implements RequestParserInterface
             return [];
         }
 
-        if (!preg_match('/boundary=(.*)$/is', $contentType, $matches)) {
+        if (!preg_match('/boundary=(.*)$/is', $contentType, $matches)) { //分割符号
             return [];
         }
         $boundary = $matches[1];
@@ -141,14 +153,14 @@ class MultipartFormDataParser extends Object implements RequestParserInterface
             if (empty($bodyPart)) {
                 continue;
             }
-            list($headers, $value) = preg_split("/\\R\\R/", $bodyPart, 2);
+            list($headers, $value) = preg_split("/\\R\\R/", $bodyPart, 2); //换行
             $headers = $this->parseHeaders($headers);
 
             if (!isset($headers['content-disposition']['name'])) {
                 continue;
             }
 
-            if (isset($headers['content-disposition']['filename'])) {
+            if (isset($headers['content-disposition']['filename'])) { //文件
                 // file upload:
                 if ($filesCount >= $this->getUploadFileMaxCount()) {
                     continue;
@@ -185,7 +197,7 @@ class MultipartFormDataParser extends Object implements RequestParserInterface
                 $this->addFile($_FILES, $headers['content-disposition']['name'], $fileInfo);
 
                 $filesCount++;
-            } else {
+            } else { //非文件
                 // regular parameter:
                 $this->addValue($bodyParams, $headers['content-disposition']['name'], $value);
             }

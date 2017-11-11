@@ -96,9 +96,9 @@ class ErrorHandler extends \yii\base\ErrorHandler
         $response->setStatusCodeByException($exception);
         //不同的exception显示不同的信息
         /*  Exception
-         *      InvalidConfigException
+         *      InvalidConfigException  配置错误 bootstrap() createObject()
          *      NotSupportedException
-         *      UnknownClassException
+         *      UnknownClassException   auto自动加载
          *      UnknownPropertyException
          *      UserException
          *          InvalidRouteException

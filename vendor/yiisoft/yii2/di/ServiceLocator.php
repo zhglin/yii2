@@ -122,16 +122,19 @@ class ServiceLocator extends Component
      * @throws InvalidConfigException if `$id` refers to a nonexistent component ID
      * @see has()
      * @see set()
+     * 根据组件配置获取组件的实例
      */
     public function get($id, $throwException = true)
     {
+        //创建的每个组件都是单例
         if (isset($this->_components[$id])) {
             return $this->_components[$id];
         }
 
         if (isset($this->_definitions[$id])) {
             $definition = $this->_definitions[$id];
-            if (is_object($definition) && !$definition instanceof Closure) { //直接设置对象
+            //Closure 匿名函数
+            if (is_object($definition) && !$definition instanceof Closure) {
                 return $this->_components[$id] = $definition;
             } else {
                 return $this->_components[$id] = Yii::createObject($definition);
@@ -185,16 +188,20 @@ class ServiceLocator extends Component
      * - an object: When [[get()]] is called, this object will be returned.
      *
      * @throws InvalidConfigException if the definition is an invalid configuration array
+     * 注册组件
+     * 如果配置是个数组 必须指定class
      */
     public function set($id, $definition)
     {
+        //只传$id 不传$definition 表示删除掉此组件
         unset($this->_components[$id]);
-
         if ($definition === null) {
             unset($this->_definitions[$id]);
             return;
         }
 
+        //$locator->set('pageCache', new FileCache); 直接传组件实例
+        //$locator->set('cache', 'yii\caching\FileCache'); is_callable返回true
         if (is_object($definition) || is_callable($definition, true)) {
             // an object, a class name, or a PHP callable
             $this->_definitions[$id] = $definition;
@@ -213,6 +220,7 @@ class ServiceLocator extends Component
     /**
      * Removes the component from the locator.
      * @param string $id the component ID
+     * 删除特定的组件
      */
     public function clear($id)
     {
@@ -223,6 +231,8 @@ class ServiceLocator extends Component
      * Returns the list of the component definitions or the loaded component instances.
      * @param bool $returnDefinitions whether to return component definitions instead of the loaded component instances.
      * @return array the list of the component definitions or the loaded component instances (ID => definition or instance).
+     * true 返回所有组件的配置
+     * false 返回所有组件的实例
      */
     public function getComponents($returnDefinitions = true)
     {
@@ -255,6 +265,7 @@ class ServiceLocator extends Component
      * ```
      *
      * @param array $components component definitions or instances
+     * 处理config文件中的components数组
      */
     public function setComponents($components)
     {

@@ -550,10 +550,14 @@ class Container extends Component
      */
     public function invoke(callable $callback, $params = [])
     {
-        if (is_callable($callback)) { //is_callable(array('class','method')) 返回true （method必须存在 __call也不行，静态函数可以 private返回false
+        /*
+         * 如果对象存在_call 不管是不是私有函数 都会返回true 否则私有函数返回false
+         */
+        if (is_callable($callback)) {
             return call_user_func_array($callback, $this->resolveCallableDependencies($callback, $params));
         } else {
-            return call_user_func_array($callback, $params);//is_callable('function () {echo "111";}') 返回false
+            //走到这里基本上就报错了
+            return call_user_func_array($callback, $params);
         }
     }
 

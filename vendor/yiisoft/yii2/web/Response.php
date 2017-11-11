@@ -381,6 +381,7 @@ class Response extends \yii\base\Response
 
     /**
      * Sends the cookies to the client.
+     * 设置cookie
      */
     protected function sendCookies()
     {
@@ -388,7 +389,7 @@ class Response extends \yii\base\Response
             return;
         }
         $request = Yii::$app->getRequest();
-        if ($request->enableCookieValidation) {
+        if ($request->enableCookieValidation) { //是否开启了加密
             if ($request->cookieValidationKey == '') {
                 throw new InvalidConfigException(get_class($request) . '::cookieValidationKey must be configured with a secret key.');
             }

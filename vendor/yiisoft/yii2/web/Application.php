@@ -30,6 +30,7 @@ class Application extends \yii\base\Application
 {
     /**
      * @var string the default route of this application. Defaults to 'site'.
+     * 默认的controller 可配置
      */
     public $defaultRoute = 'site';
     /**
@@ -49,10 +50,12 @@ class Application extends \yii\base\Application
      * ```
      *
      * Defaults to null, meaning catch-all is not used.
+     * 如果配置了此参数 所有的请求都将被拦截到此 route中 可配置
      */
     public $catchAll;
     /**
      * @var Controller the currently active controller instance
+     * 当前controller的实例 根据路由创建了controller时会被赋值
      */
     public $controller;
 
@@ -74,6 +77,7 @@ class Application extends \yii\base\Application
      * @param Request $request the request to be handled
      * @return Response the resulting response
      * @throws NotFoundHttpException if the requested route is invalid
+     * 处理请求
      */
     public function handleRequest($request)
     {

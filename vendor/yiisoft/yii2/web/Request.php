@@ -87,6 +87,7 @@ class Request extends \yii\base\Request
 {
     /**
      * The name of the HTTP header for sending CSRF token.
+     * http报头中的名称
      */
     const CSRF_HEADER = 'X-CSRF-Token';
     /**
@@ -110,16 +111,19 @@ class Request extends \yii\base\Request
      *
      * @see Controller::enableCsrfValidation
      * @see http://en.wikipedia.org/wiki/Cross-site_request_forgery
+     * 是否开启csrf校验
      */
     public $enableCsrfValidation = true;
     /**
      * @var string the name of the token used to prevent CSRF. Defaults to '_csrf'.
      * This property is used only when [[enableCsrfValidation]] is true.
+     * csrf的参数名
      */
     public $csrfParam = '_csrf';
     /**
      * @var array the configuration for creating the CSRF [[Cookie|cookie]]. This property is used only when
      * both [[enableCsrfValidation]] and [[enableCsrfCookie]] are true.
+     * 如果使用cookie保存参数名称 cookie的属性
      */
     public $csrfCookie = ['httpOnly' => true];
     /**
@@ -169,6 +173,9 @@ class Request extends \yii\base\Request
      * multipart/form-data 图片文件上传的格式
      * application/json {"title":"test","sub":[1,2,3]} json
      * text/xml  xml
+     *
+     * yii\web\JsonParser json解析
+     * yii\web\MultipartFormDataParser multipart/form-data解析
      */
     public $parsers = [];
 
@@ -178,6 +185,7 @@ class Request extends \yii\base\Request
     private $_cookies;
     /**
      * @var HeaderCollection Collection of request headers.
+     * 请求的报文头信息
      */
     private $_headers;
 
@@ -190,10 +198,11 @@ class Request extends \yii\base\Request
      */
     public function resolve()
     {
+        //路由
         $result = Yii::$app->getUrlManager()->parseRequest($this);
         if ($result !== false) {
             list ($route, $params) = $result;
-            if ($this->_queryParams === null) {
+            if ($this->_queryParams === null) { //开启url美化 _queryParams为空
                 $_GET = $params + $_GET; // preserve numeric keys
             } else {
                 $this->_queryParams = $params + $this->_queryParams;
@@ -242,6 +251,7 @@ class Request extends \yii\base\Request
      */
     public function getMethod()
     {
+        //post提交 也可以指定methodParam值 改变method
         if (isset($_POST[$this->methodParam])) {
             return strtoupper($_POST[$this->methodParam]);
         }
@@ -357,6 +367,7 @@ class Request extends \yii\base\Request
     /**
      * Returns the raw HTTP request body.
      * @return string the request body
+     * 获取body体
      */
     public function getRawBody()
     {
@@ -376,6 +387,7 @@ class Request extends \yii\base\Request
         $this->_rawBody = $rawBody;
     }
 
+    //解析出来的body post提交
     private $_bodyParams;
 
     /**
@@ -399,6 +411,7 @@ class Request extends \yii\base\Request
                 return $this->_bodyParams;
             }
 
+            //获取body体的类型
             $rawContentType = $this->getContentType();
             if (($pos = strpos($rawContentType, ';')) !== false) {
                 // e.g. application/json; charset=UTF-8
@@ -474,6 +487,7 @@ class Request extends \yii\base\Request
         return $this->getBodyParam($name, $defaultValue);
     }
 
+    //get请求的数据
     private $_queryParams;
 
     /**
@@ -1024,6 +1038,7 @@ class Request extends \yii\base\Request
         }
     }
 
+    //希望获取的响应 类型
     private $_contentTypes;
 
     /**
@@ -1277,6 +1292,8 @@ class Request extends \yii\base\Request
      * ```
      *
      * @return CookieCollection the cookie collection.
+     * 这里只是获取cookies
+     * 设置cookies在response对象中
      */
     public function getCookies()
     {
